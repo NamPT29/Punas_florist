@@ -29,6 +29,11 @@ const admin = `${base}quan-ly/`;  // trang quản lý
 const browser = await chromium.launch(process.env.CHROMIUM ? { executablePath: process.env.CHROMIUM } : {});
 const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true, locale: 'vi-VN' });
 await ctx.route(/fonts\.(googleapis|gstatic)\.com/, (r) => r.abort());
+// Luôn chạy bản dùng thử (dữ liệu mẫu), kể cả khi config.js đã trỏ tới Supabase thật.
+await ctx.route('**/js/config.js', (r) => r.fulfill({
+  contentType: 'text/javascript',
+  body: "export const SUPABASE_URL = ''; export const SUPABASE_ANON_KEY = '';",
+}));
 const page = await ctx.newPage();
 const errors = [];
 page.on('pageerror', (e) => errors.push(e.message));
