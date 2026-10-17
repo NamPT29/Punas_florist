@@ -11,7 +11,9 @@ function seed() {
   const t = today();
   const s = {
     seq: 100,
-    settings: { id: 1, shop_name: 'Tiệm hoa (dùng thử)', phone: '', address: '', default_ship_fee: 30000,
+    settings: { id: 1, shop_name: 'Tiệm hoa (dùng thử)', phone: '0900000000', zalo: '', address: '12 Đường Hoa, Q.3, TP.HCM',
+      intro: 'Hoa tươi mỗi ngày từ Đà Lạt. Nhận bó hoa, giỏ hoa, kệ khai trương, giao nhanh nội thành.',
+      open_hours: '7:00 – 21:00 hằng ngày', default_ship_fee: 30000,
       holidays: ['02-14', '03-08', '10-20', '11-20', '12-24'] },
     materials: [], products: [], customers: [], orders: [], stock_moves: [], expenses: [],
   };
@@ -30,16 +32,20 @@ function seed() {
   const ribbon = mat('Ruy băng lụa', 'cuộn', 35, 12000, 10, 365, 'phu_lieu');
   const basket = mat('Giỏ mây', 'cái', 6, 40000, 3, 365, 'phu_lieu');
 
-  const prod = (name, cats, price, holiday, comps) => {
-    const p = { id: ++s.seq, name, categories: cats, price, holiday_price: holiday, photo_url: null, active: true,
+  const prod = (name, cats, price, holiday, comps, description = '') => {
+    const p = { id: ++s.seq, name, description, categories: cats, price, holiday_price: holiday, photo_url: null, active: true,
       components: comps.map(([material_id, qty]) => ({ material_id, qty })) };
     s.products.push(p);
     return p;
   };
-  const p1 = prod('Bó hồng đỏ 20 bông', ['Sinh nhật', 'Tình yêu'], 650000, 750000, [[rose, 20], [baby, 1], [paper, 2], [ribbon, 1]]);
-  const p2 = prod('Giỏ hướng dương', ['Khai trương', 'Chúc mừng'], 520000, null, [[sun, 7], [daisy, 10], [basket, 1], [ribbon, 1]]);
-  const p3 = prod('Bó cẩm chướng hồng', ['Sinh nhật', 'Tặng mẹ'], 350000, 420000, [[carn, 15], [baby, 1], [paper, 2]]);
-  prod('Bó cúc tana mini', ['Sinh nhật'], 180000, null, [[daisy, 15], [paper, 1], [ribbon, 1]]);
+  const p1 = prod('Bó hồng đỏ 20 bông', ['Sinh nhật', 'Tình yêu'], 650000, 750000, [[rose, 20], [baby, 1], [paper, 2], [ribbon, 1]],
+    '20 hồng đỏ Đà Lạt, điểm baby trắng, gói giấy kraft và ruy băng lụa.');
+  const p2 = prod('Giỏ hướng dương', ['Khai trương', 'Chúc mừng'], 520000, null, [[sun, 7], [daisy, 10], [basket, 1], [ribbon, 1]],
+    'Giỏ mây 7 bông hướng dương rực rỡ cùng cúc tana, hợp chúc mừng, khai trương.');
+  const p3 = prod('Bó cẩm chướng hồng', ['Sinh nhật', 'Tặng mẹ'], 350000, 420000, [[carn, 15], [baby, 1], [paper, 2]],
+    '15 cẩm chướng hồng dịu dàng, món quà ý nghĩa tặng mẹ, tặng cô.');
+  prod('Bó cúc tana mini', ['Sinh nhật'], 180000, null, [[daisy, 15], [paper, 1], [ribbon, 1]],
+    'Bó nhỏ xinh 15 cành cúc tana, vừa túi tiền.');
 
   const bday = (offset) => `1990-${addDays(t, offset).slice(5)}`;
   const cus = (name, phone, address, birthday = null, note = '') => {
@@ -176,6 +182,16 @@ export function createDemoBackend(storage = globalThis.localStorage) {
           && (!from || isoOf(new Date(m.created_at)) >= from) && (!to || isoOf(new Date(m.created_at)) <= to))
         .sort((a, b) => b.id - a.id).slice(0, limit)
         .map((m) => { const mat = s.materials.find((x) => x.id === m.material_id); return { ...m, material: mat && { name: mat.name, unit: mat.unit } }; }));
+    },
+
+    async publicCatalog() {
+      const { shop_name, phone, zalo, address, intro, open_hours, holidays } = s.settings;
+      return clone({
+        shop: { shop_name, phone, zalo: zalo || '', address, intro: intro || '', open_hours: open_hours || '', holidays },
+        products: s.products.filter((p) => p.active).sort((a, b) => a.name.localeCompare(b.name, 'vi'))
+          .map(({ id: pid, name, description, categories, price, holiday_price, photo_url }) =>
+            ({ id: pid, name, description: description || '', categories, price, holiday_price, photo_url })),
+      });
     },
 
     async listProducts() { return clone([...s.products].sort((a, b) => (b.active - a.active) || a.name.localeCompare(b.name, 'vi'))); },

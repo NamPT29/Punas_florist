@@ -38,7 +38,7 @@ export async function edit({ el, params }) {
   const [products, materials] = await Promise.all([db.listProducts(), db.listMaterials()]);
   const isNew = params[0] === 'moi';
   const p = isNew
-    ? { name: '', categories: [], price: 0, holiday_price: null, photo_url: null, active: true, components: [] }
+    ? { name: '', description: '', categories: [], price: 0, holiday_price: null, photo_url: null, active: true, components: [] }
     : products.find((x) => x.id === Number(params[0]));
   if (!p) throw new Error('Không tìm thấy sản phẩm');
   const st = { ...p, components: p.components.map((c) => ({ ...c })) };
@@ -62,6 +62,7 @@ export async function edit({ el, params }) {
       </div>
       <label class="field">Danh mục (cách nhau bởi dấu phẩy)<input name="cats" list="cats" value="${st.categories.join(', ')}" placeholder="Sinh nhật, Tình yêu"></label>
       <datalist id="cats">${knownCats.map((c) => html`<option value="${c}"></option>`)}</datalist>
+      <label class="field">Mô tả cho khách (hiện trên trang cửa hàng)<textarea name="description" rows="2" placeholder="VD: 20 hồng đỏ Đà Lạt, điểm baby trắng, gói giấy kraft.">${st.description || ''}</textarea></label>
 
       <section class="card stack">
         <div class="row"><h2 style="margin: 0">Công thức bó hoa</h2><span class="muted">tự trừ kho khi cắm</span></div>
@@ -150,6 +151,7 @@ export async function edit({ el, params }) {
     const payload = {
       id: isNew ? null : p.id,
       name: f.elements.name.value.trim(),
+      description: f.elements.description.value.trim(),
       categories: f.elements.cats.value.split(',').map((s) => s.trim()).filter(Boolean),
       price: parseMoney(f.elements.price.value),
       holiday_price: holiday ? parseMoney(holiday) : null,

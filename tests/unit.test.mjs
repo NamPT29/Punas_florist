@@ -145,3 +145,16 @@ test('tổng quan dùng dữ liệu bản dùng thử', async () => {
   assert.ok(d.stockAlerts.some((m) => m.name === 'Hồng đỏ Đà Lạt'));
   assert.ok(d.birthdays.some((c) => c.name === 'Anh Minh'));
 });
+
+test('trang cho khách: chỉ mẫu đang bán, không lộ giá vốn / công thức', async () => {
+  const db = createDemoBackend(memoryStorage());
+  const first = (await db.listProducts())[0];
+  await db.saveProduct({ ...first, active: false });
+  const { shop, products } = await db.publicCatalog();
+  assert.ok(shop.shop_name);
+  assert.ok(!products.some((p) => p.id === first.id));
+  assert.ok(products.length > 0);
+  for (const p of products) {
+    assert.deepEqual(Object.keys(p).sort(), ['categories', 'description', 'holiday_price', 'id', 'name', 'photo_url', 'price']);
+  }
+});

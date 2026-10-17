@@ -18,13 +18,15 @@ Web app cài được lên iPhone như app thường (PWA). Dữ liệu lưu tr�
 - **Khách hàng:** lịch sử đơn, tổng đã mua, công nợ, sinh nhật, ghi chú sở thích.
 - **Thu chi, báo cáo tháng:** doanh thu theo ngày, sản phẩm bán chạy, chi phí theo loại, lãi, hoa hư hỏng, xuất Excel (CSV).
 - **Sao lưu:** tải toàn bộ dữ liệu về máy (JSON).
+- **Trang cho khách** (`/shop/`): khách xem mẫu hoa, giá, giá dịp lễ, lọc theo dịp, đặt qua Zalo hoặc gọi điện. Không cần đăng nhập, không hiện giá vốn, kho hay công thức.
 
 ## Cấu trúc
 
 ```
 web/                 Giao diện (HTML/CSS/JS thuần, không cần build)
   js/config.js       ← điền thông tin Supabase ở đây
-  js/views/          Các màn hình
+  js/views/          Các màn hình quản lý
+  shop/              Trang cho khách xem hoa
 supabase/schema.sql  Cơ sở dữ liệu, phân quyền, nghiệp vụ kho/đơn
 tests/               Kiểm thử (logic, SQL, giao diện)
 ```
@@ -77,6 +79,14 @@ Từ đó mỗi lần push code lên GitHub, Cloudflare sẽ tự cập nhật a
 
 ### 7. Cài lên iPhone
 Mở địa chỉ trên bằng **Safari** → nút **Chia sẻ** → **Thêm vào MH chính**. Đăng nhập một lần là dùng như app thường. Điện thoại Android, iPad và máy tính ở quầy cũng dùng được, chung dữ liệu.
+
+## Trang cho khách xem hoa
+- Địa chỉ: thêm `/shop/` vào sau link app, ví dụ `https://punas-florist.pages.dev/shop/`. Trong app, vào **Thêm → Trang cho khách xem hoa** để mở hoặc chia sẻ link.
+- Trang lấy dữ liệu từ app quản lý. Sản phẩm nào **Đang bán** thì hiện, bỏ chọn thì ẩn. Sửa giá, ảnh hay mô tả xong là trang tự cập nhật.
+- Vào **Thêm → Thông tin shop** để điền **số Zalo**, **giờ mở cửa** và **lời giới thiệu**. Mỗi sản phẩm có ô **Mô tả cho khách**.
+- Zalo không cho điền sẵn tin nhắn qua link. Vì vậy khi khách bấm "Đặt qua Zalo", tên mẫu hoa và giá được chép sẵn để khách dán vào tin nhắn.
+- Muốn đổi dòng tiêu đề hiện khi chia sẻ link lên Facebook hay Zalo, sửa thẻ `og:title` và `og:description` trong `web/shop/index.html`.
+- Nếu bạn đã chạy `schema.sql` bản cũ, hãy chạy lại bản mới trong SQL Editor để có trang khách. Chạy lại an toàn, không mất dữ liệu.
 
 ## Lưu ý khi dùng gói miễn phí
 - Supabase **tạm dừng** dự án miễn phí nếu khoảng 1 tuần không có ai dùng. Shop dùng hằng ngày thì không bị. Nếu bị dừng, vào trang Supabase bấm **Restore**.

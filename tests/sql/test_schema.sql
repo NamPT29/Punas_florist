@@ -139,7 +139,19 @@ update settings set shop_name = 'Tiệm Hoa Mộc';
 select pg_temp.eq((select shop_name from settings), 'Tiệm Hoa Mộc', 'chủ sửa cài đặt');
 reset role;
 
--- 4. Nhân viên thường: dùng được nghiệp vụ, không sửa được cài đặt.
+-- 4. Trang cho khách: ai cũng xem được, chỉ sản phẩm đang bán, không lộ giá vốn/công thức.
+update products set description = 'Hồng Đà Lạt, baby trắng';
+select save_product('{"name":"Mẫu ẩn","price":1,"active":false}');
+reset role;
+set role anon;
+select pg_temp.eq(jsonb_array_length(public_catalog()->'products'), 1, 'chỉ sản phẩm đang bán');
+select pg_temp.eq(public_catalog()->'products'->0->>'description', 'Hồng Đà Lạt, baby trắng', 'mô tả');
+select pg_temp.eq(public_catalog()->'shop'->>'shop_name', 'Tiệm Hoa Mộc', 'tên shop');
+select pg_temp.eq(public_catalog()::text ~ '(cost|components|stock|min_stock)', false, 'không lộ dữ liệu nội bộ');
+select pg_temp.expect_error('select * from products', '42501');
+reset role;
+
+-- 5. Nhân viên thường: dùng được nghiệp vụ, không sửa được cài đặt.
 set role authenticated;
 set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000003';
 select pg_temp.eq((select count(*) from orders), 3::bigint, 'nhân viên thấy đơn');

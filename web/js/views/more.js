@@ -46,6 +46,7 @@ export async function render({ el }) {
       <span class="avatar" style="width: 34px; height: 34px; border-radius: 10px; ${bg}">${raw(icon)}</span>
       <span class="grow" style="font-size: 15px; font-weight: 500">${label}</span><span class="chev">›</span>
     </a>`;
+  const shopUrl = new URL('shop/', `${location.origin}${location.pathname}`).href;
   el.innerHTML = html`
     <header class="top" style="justify-content: flex-start">
       <div class="avatar" style="width: 48px; height: 48px; border-radius: 24px">${initials(user.name)}</div>
@@ -68,6 +69,16 @@ export async function render({ el }) {
         </button>
       </nav>
 
+      <div class="card rose stack">
+        <div><b style="font-size: 15px">Trang cho khách xem hoa</b>
+          <div class="small" style="color: #6B4552">Gửi link này lên Facebook, Zalo để khách xem mẫu và giá, đặt qua Zalo. Không hiện giá vốn hay kho.</div></div>
+        <div class="small" style="word-break: break-all; color: var(--ink)">${shopUrl}</div>
+        <div class="btns">
+          <a class="btn btn-primary btn-sm" href="${shopUrl}" target="_blank" rel="noopener">Mở trang</a>
+          <button class="btn btn-sm" id="share-shop">${raw(ICON.share)}Chia sẻ link</button>
+        </div>
+      </div>
+
       <div class="card green row" style="align-items: flex-start; justify-content: flex-start; gap: 12px">
         <span class="avatar" style="width: 34px; height: 34px; border-radius: 10px; background: #fff; color: var(--green)">${raw(ICON.mobile)}</span>
         <div style="font-size: 13px; line-height: 1.5"><b style="font-size: 14px">Cài lên iPhone</b><br>Mở bằng Safari → nút Chia sẻ → “Thêm vào MH chính”. App sẽ có biểu tượng như app thường.</div>
@@ -81,6 +92,12 @@ export async function render({ el }) {
         </div>` : html`<button class="btn btn-ghost btn-lg" id="logout">Đăng xuất</button>`}
     </div>`.s;
 
+  el.querySelector('#share-shop').onclick = async () => {
+    try {
+      if (navigator.share) await navigator.share({ title: settings?.shop_name || 'Shop hoa', text: 'Xem mẫu hoa và bảng giá', url: shopUrl });
+      else { await navigator.clipboard.writeText(shopUrl); toast('Đã sao chép link trang cho khách'); }
+    } catch { /* người dùng đóng bảng chia sẻ */ }
+  };
   el.querySelector('#backup').onclick = async () => {
     try {
       const data = await db.exportAll();
@@ -129,6 +146,12 @@ export async function settings({ el }) {
         <label class="field">Địa chỉ shop<input name="address" value="${s.address}"></label>
       </section>
       <section class="card stack">
+        <h2 style="margin: 0">Trang cho khách</h2>
+        <label class="field">Số Zalo nhận đặt hoa (để trống = dùng SĐT shop)<input name="zalo" type="tel" value="${s.zalo || ''}"></label>
+        <label class="field">Giờ mở cửa<input name="open_hours" value="${s.open_hours || ''}" placeholder="VD: 7:00 – 21:00 hằng ngày"></label>
+        <label class="field">Lời giới thiệu<textarea name="intro" rows="3" placeholder="VD: Hoa tươi mỗi ngày từ Đà Lạt, giao nhanh nội thành.">${s.intro || ''}</textarea></label>
+      </section>
+      <section class="card stack">
         <label class="field">Phí ship mặc định<input name="ship" data-money inputmode="numeric" value="${num(s.default_ship_fee)}"></label>
         <label class="field">Ngày lễ dùng giá lễ (ngày/tháng, cách nhau dấu phẩy)<input name="holidays" value="${holidaysToText(s.holidays)}" placeholder="14/2, 8/3, 20/10, 20/11, 24/12"></label>
         <div class="muted">Sản phẩm có “giá ngày lễ” sẽ tự dùng giá đó khi giao vào các ngày này. Đang đặt: ${(s.holidays || []).map((h) => ddmm(`2000-${h}`)).join(', ') || 'chưa có'}.</div>
@@ -137,7 +160,7 @@ export async function settings({ el }) {
     </form>`.s;
   const f = el.querySelector('#f');
   bindMoneyInputs(el);
-  if (!isOwner) f.querySelectorAll('input').forEach((i) => { i.disabled = true; });
+  if (!isOwner) f.querySelectorAll('input, textarea').forEach((i) => { i.disabled = true; });
   f.addEventListener('submit', async (e) => {
     e.preventDefault();
     try {
@@ -145,6 +168,9 @@ export async function settings({ el }) {
         shop_name: f.elements.shop_name.value.trim() || 'Shop Hoa',
         phone: f.elements.phone.value.trim(),
         address: f.elements.address.value.trim(),
+        zalo: f.elements.zalo.value.trim(),
+        open_hours: f.elements.open_hours.value.trim(),
+        intro: f.elements.intro.value.trim(),
         default_ship_fee: parseMoney(f.elements.ship.value),
         holidays: parseHolidays(f.elements.holidays.value),
       });

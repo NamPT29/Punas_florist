@@ -76,6 +76,8 @@ export async function createSupabaseBackend(url, key) {
       return run(q.limit(Math.min(limit, 1000)));
     },
 
+    publicCatalog: () => rpc('public_catalog'),
+
     async listProducts() {
       const rows = await run(sb.from('products').select('*, components:product_components(material_id,qty)')
         .order('active', { ascending: false }).order('name'));

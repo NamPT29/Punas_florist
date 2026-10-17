@@ -33,6 +33,10 @@ create table if not exists settings (
   holidays text[] not null default array['02-14', '03-08', '10-20', '11-20', '12-24']
 );
 insert into settings (id) values (1) on conflict do nothing;
+-- Thông tin hiện trên trang cho khách.
+alter table settings add column if not exists zalo text not null default '';
+alter table settings add column if not exists intro text not null default '';
+alter table settings add column if not exists open_hours text not null default '';
 
 -- ---------- Kho: hoa và phụ liệu ----------
 create table if not exists materials (
@@ -59,6 +63,9 @@ create table if not exists products (
   active boolean not null default true,
   created_at timestamptz not null default now()
 );
+
+-- Mô tả hiện trên trang cho khách.
+alter table products add column if not exists description text not null default '';
 
 create table if not exists product_components (
   product_id bigint not null references products(id) on delete cascade,
@@ -393,14 +400,14 @@ declare v_id bigint := (p->>'id')::bigint;
 begin
   if coalesce(trim(p->>'name'), '') = '' then raise exception 'Chưa nhập tên sản phẩm'; end if;
   if v_id is null then
-    insert into products (name, categories, price, holiday_price, photo_url, active)
-    values (trim(p->>'name'),
+    insert into products (name, description, categories, price, holiday_price, photo_url, active)
+    values (trim(p->>'name'), coalesce(trim(p->>'description'), ''),
             coalesce(array(select jsonb_array_elements_text(p->'categories')), '{}'),
             (p->>'price')::numeric, (p->>'holiday_price')::numeric, p->>'photo_url',
             coalesce((p->>'active')::boolean, true))
     returning id into v_id;
   else
-    update products set name = trim(p->>'name'),
+    update products set name = trim(p->>'name'), description = coalesce(trim(p->>'description'), ''),
       categories = coalesce(array(select jsonb_array_elements_text(p->'categories')), '{}'),
       price = (p->>'price')::numeric, holiday_price = (p->>'holiday_price')::numeric,
       photo_url = p->>'photo_url', active = coalesce((p->>'active')::boolean, true)
@@ -414,6 +421,22 @@ begin
   group by (c->>'material_id')::bigint;
   return v_id;
 end $$;
+
+-- Trang cho khách (không cần đăng nhập): chỉ trả thông tin shop và sản phẩm đang bán,
+-- không có giá vốn, công thức, tồn kho.
+create or replace function public_catalog() returns jsonb
+language sql stable security definer set search_path = public as $$
+  select jsonb_build_object(
+    'shop', (select jsonb_build_object('shop_name', shop_name, 'phone', phone, 'zalo', zalo, 'address', address,
+                                       'intro', intro, 'open_hours', open_hours, 'holidays', holidays)
+             from settings where id = 1),
+    'products', coalesce((select jsonb_agg(jsonb_build_object(
+                  'id', id, 'name', name, 'description', description, 'categories', categories,
+                  'price', price, 'holiday_price', holiday_price, 'photo_url', photo_url) order by name)
+                from products where active), '[]'::jsonb));
+$$;
+revoke all on function public_catalog() from public;
+grant execute on function public_catalog() to anon, authenticated;
 
 do $$
 declare f text;

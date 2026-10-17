@@ -1,11 +1,12 @@
 // Service worker: lưu sẵn giao diện để app mở nhanh và mở được khi mạng chập chờn.
 // Dữ liệu (Supabase) luôn lấy trực tiếp từ mạng. Đổi VERSION mỗi lần cập nhật giao diện.
-const VERSION = 'shophoa-v1';
+const VERSION = 'shophoa-v2';
 const SHELL = [
   './', 'index.html', 'manifest.webmanifest', 'css/app.css', 'icons/icon.svg', 'icons/apple-touch-icon.png',
   'js/app.js', 'js/util.js', 'js/stats.js', 'js/config.js', 'js/backend.js', 'js/backend-demo.js', 'js/backend-supabase.js',
   'js/views/home.js', 'js/views/orders.js', 'js/views/stock.js', 'js/views/products.js',
   'js/views/customers.js', 'js/views/finance.js', 'js/views/more.js',
+  'shop/', 'css/shop.css', 'js/shop.js',
 ];
 
 self.addEventListener('install', (e) => {

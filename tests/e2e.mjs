@@ -158,6 +158,32 @@ try {
     await toastSays('Đã lưu cài đặt');
   });
 
+  await step('Trang cho khách: xem mẫu, lọc, mở chi tiết', async () => {
+    await page.goto(`${base}#/san-pham`);
+    await page.locator('a.item', { hasText: 'Bó hồng đỏ' }).click();
+    await page.locator('textarea[name=description]').fill('Bó hoa thử nghiệm cho trang khách');
+    await page.locator('#save').click();
+    await toastSays('Đã lưu sản phẩm');
+    await page.goto(`${base}shop/`);
+    await page.getByRole('heading', { name: 'Mẫu hoa' }).waitFor();
+    const all = await page.locator('.p-card').count();
+    assert.ok(all >= 3);
+    assert.equal(await page.getByText(/giá vốn|tồn kho/i).count(), 0);
+    await shot('10-trang-khach');
+    await page.locator('[data-cat="Khai trương"]').click();
+    assert.ok(await page.locator('.p-card').count() < all);
+    await page.locator('[data-cat=""]').click();
+    await page.locator('.p-card', { hasText: 'Bó hồng đỏ' }).click();
+    await page.locator('dialog .detail-price').waitFor();
+    await page.getByText('Bó hoa thử nghiệm cho trang khách').waitFor();
+    assert.ok((await page.locator('#order-zalo').getAttribute('href')).startsWith('https://zalo.me/'));
+    await shot('11-chi-tiet-mau');
+    await page.locator('dialog [data-close]').click();
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await shot('12-trang-khach-may-tinh');
+    await page.setViewportSize({ width: 390, height: 844 });
+  });
+
   assert.deepEqual(errors, [], `Lỗi trên trang:\n${errors.join('\n')}`);
   console.log('E2E: tất cả các bước đều đạt');
 } catch (e) {
