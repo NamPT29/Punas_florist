@@ -69,9 +69,9 @@ export const SUPABASE_ANON_KEY = 'eyJ...';
 Khóa này được phép công khai, dữ liệu được bảo vệ bằng đăng nhập và phân quyền ở bước 2–4. **Không bao giờ** dùng khóa `service_role` hay `secret`.
 
 ### 6. Đưa app lên mạng bằng Cloudflare Pages (miễn phí)
-1. Đăng ký https://dash.cloudflare.com, vào **Workers & Pages → Create → Pages → Connect to Git**, chọn repo `shop-hoa`.
+1. Đăng ký https://dash.cloudflare.com, vào **Workers & Pages → Create → Pages → Connect to Git**, chọn repo `Punas_florist`.
 2. Framework preset: **None**. Build command: để trống. **Build output directory: `web`**.
-3. Bấm **Deploy**. Bạn sẽ có địa chỉ dạng `https://shop-hoa.pages.dev`.
+3. Bấm **Deploy**. Bạn sẽ có địa chỉ dạng `https://punas-florist.pages.dev`.
 
 Từ đó mỗi lần push code lên GitHub, Cloudflare sẽ tự cập nhật app.
 
