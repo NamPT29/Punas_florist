@@ -1,6 +1,6 @@
 // Khung ứng dụng: chọn backend, đăng nhập, điều hướng theo #hash, thanh menu dưới.
 import { loadBackend } from './backend.js';
-import { html, raw, ICON, errMsg, toast } from './util.js';
+import { html, raw, ICON, errMsg, toast, initials } from './util.js';
 import * as home from './views/home.js';
 import * as orders from './views/orders.js';
 import * as stock from './views/stock.js';
@@ -42,6 +42,38 @@ function renderTabs(active) {
     : html`<a href="${href}" class="tab ${key === active ? 'on' : ''}" ${key === active ? raw('aria-current="page"') : ''}>${raw(icon)}<span>${label}</span></a>`).s).join('');
 }
 
+// Menu trái trên máy tính / iPad ngang (CSS ẩn trên điện thoại).
+const SIDE = [
+  ['/', 'Tổng quan', ICON.home],
+  ['/don', 'Đơn hàng', ICON.orders],
+  ['/kho', 'Kho hoa', ICON.box],
+  ['/san-pham', 'Sản phẩm', ICON.flower],
+  ['/khach', 'Khách hàng', ICON.user],
+  ['/thu-chi', 'Thu chi', ICON.wallet],
+  ['/bao-cao', 'Báo cáo', ICON.chart],
+  ['/cai-dat', 'Cài đặt shop', ICON.shop],
+  ['/them', 'Khác', ICON.more],
+];
+
+function renderSide(path) {
+  const isOn = (p) => (p === '/' ? path === '/' : path === p || (path.startsWith(`${p}/`) && path !== '/don/moi'));
+  const current = (on) => (on ? raw('aria-current="page"') : '');
+  document.getElementById('side').innerHTML = html`
+    <a class="side-brand" href="#/">
+      <img src="icons/icon.svg" alt="">
+      <span><b>${app.settings?.shop_name || 'Shop Hoa'}</b><small>Quản lý shop hoa</small></span>
+    </a>
+    <a class="btn btn-primary side-create" href="#/don/moi" ${current(path === '/don/moi')}>${raw(ICON.plus)}Tạo đơn</a>
+    <nav class="side-nav">
+      ${SIDE.map(([p, label, icon]) => html`<a class="side-link ${isOn(p) ? 'on' : ''}" href="#${p}" ${current(isOn(p))}>${raw(icon)}<span>${label}</span></a>`)}
+    </nav>
+    <div class="side-foot">
+      <a class="side-link" href="shop/" target="_blank" rel="noopener">${raw(ICON.share)}<span>Trang cho khách</span></a>
+      <div class="side-user"><span class="avatar">${initials(app.user.name)}</span>
+        <span><b>${app.user.name}</b><small>${app.user.role === 'owner' ? 'Chủ shop' : 'Nhân viên'}</small></span></div>
+    </div>`.s;
+}
+
 export function parseHash() {
   const h = location.hash.replace(/^#/, '') || '/';
   const [path, qs = ''] = h.split('?');
@@ -72,6 +104,7 @@ export async function refresh({ keepScroll = false } = {}) {
 
   if (!app.user?.role) {
     document.body.classList.add('no-tabs');
+    document.body.classList.remove('has-side');
     const el = document.createElement('div');
     await more.login({ el });
     if (token === renderToken) root.replaceChildren(el);
@@ -83,6 +116,8 @@ export async function refresh({ keepScroll = false } = {}) {
   const [re, view, tab] = route;
   const params = path.match(re).slice(1);
   document.body.classList.toggle('no-tabs', tab === null);
+  document.body.classList.add('has-side');
+  renderSide(path);
   if (tab) renderTabs(tab);
 
   if (!root.firstChild) root.innerHTML = '<div class="loading">Đang tải…</div>';

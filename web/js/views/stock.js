@@ -42,7 +42,7 @@ export async function list({ el, query }) {
       </div>
     </header>
     <div class="page">
-      ${shown.length ? html`<div class="list">
+      ${shown.length ? html`<div class="list list-grid">
         ${shown.map((m) => {
           const cap = Math.max(m.min_stock * 2, m.reserved, 1);
           const pct = Math.max(0, Math.min(100, (m.stock / cap) * 100));

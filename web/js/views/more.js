@@ -53,6 +53,7 @@ export async function render({ el }) {
       <div class="grow"><h1 style="font-size: 24px">${settings?.shop_name || 'Shop Hoa'}</h1><div class="muted">${user.name} · ${user.role === 'owner' ? 'Chủ shop' : 'Nhân viên'}</div></div>
     </header>
     <div class="page">
+      <div class="cols"><div class="col">
       <div class="label-up" style="margin: 6px 4px 0">Quản lý</div>
       <nav class="list" aria-label="Quản lý">
         ${item('#/san-pham', ICON.flower, 'background: var(--rose-soft); color: var(--rose-ink)', 'Sản phẩm & công thức')}
@@ -69,6 +70,7 @@ export async function render({ el }) {
         </button>
       </nav>
 
+      </div><div class="col">
       <div class="card rose stack">
         <div><b style="font-size: 15px">Trang cho khách xem hoa</b>
           <div class="small" style="color: #6B4552">Gửi link này lên Facebook, Zalo để khách xem mẫu và giá, đặt qua Zalo. Không hiện giá vốn hay kho.</div></div>
@@ -90,6 +92,7 @@ export async function render({ el }) {
           <div class="muted">Dữ liệu chỉ lưu trên máy này. Khi kết nối Supabase (README), dữ liệu sẽ lưu online và dùng chung cho cả shop.</div>
           <button class="btn btn-danger" id="reset">Xóa và tạo lại dữ liệu mẫu</button>
         </div>` : html`<button class="btn btn-ghost btn-lg" id="logout">Đăng xuất</button>`}
+      </div></div>
     </div>`.s;
 
   el.querySelector('#share-shop').onclick = async () => {
@@ -140,6 +143,7 @@ export async function settings({ el }) {
     <header class="top-nav"><a class="back" href="#/them">${raw(ICON.back)}Thêm</a><h1>Cài đặt shop</h1><span style="width: 52px"></span></header>
     <form class="page" id="f" novalidate>
       ${!isOwner && html`<div class="card muted">Chỉ chủ shop mới sửa được phần này.</div>`}
+      <div class="cols"><div class="col">
       <section class="card stack">
         <label class="field">Tên shop<input name="shop_name" value="${s.shop_name}"></label>
         <label class="field">Số điện thoại shop<input name="phone" type="tel" value="${s.phone}"></label>
@@ -151,12 +155,14 @@ export async function settings({ el }) {
         <label class="field">Giờ mở cửa<input name="open_hours" value="${s.open_hours || ''}" placeholder="VD: 7:00 – 21:00 hằng ngày"></label>
         <label class="field">Lời giới thiệu<textarea name="intro" rows="3" placeholder="VD: Hoa tươi mỗi ngày từ Đà Lạt, giao nhanh nội thành.">${s.intro || ''}</textarea></label>
       </section>
+      </div><div class="col">
       <section class="card stack">
         <label class="field">Phí ship mặc định<input name="ship" data-money inputmode="numeric" value="${num(s.default_ship_fee)}"></label>
         <label class="field">Ngày lễ dùng giá lễ (ngày/tháng, cách nhau dấu phẩy)<input name="holidays" value="${holidaysToText(s.holidays)}" placeholder="14/2, 8/3, 20/10, 20/11, 24/12"></label>
         <div class="muted">Sản phẩm có “giá ngày lễ” sẽ tự dùng giá đó khi giao vào các ngày này. Đang đặt: ${(s.holidays || []).map((h) => ddmm(`2000-${h}`)).join(', ') || 'chưa có'}.</div>
       </section>
       ${isOwner && html`<button class="btn btn-primary btn-lg" type="submit">Lưu cài đặt</button>`}
+      </div></div>
     </form>`.s;
   const f = el.querySelector('#f');
   bindMoneyInputs(el);

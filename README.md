@@ -2,6 +2,11 @@
 
 Web app cài được lên iPhone như app thường (PWA). Dữ liệu lưu trên Supabase. Tất cả đều dùng gói **miễn phí**.
 
+Giao diện tự đổi theo màn hình:
+- **Điện thoại:** thanh menu dưới, một cột.
+- **iPad dọc:** thanh menu dưới, nội dung rộng hơn.
+- **Laptop hoặc iPad ngang (từ 900px):** menu bên trái, nội dung chia 2–3 cột, hộp thoại hiện giữa màn hình.
+
 **Chức năng**
 - **Tổng quan:** doanh thu hôm nay và tháng này, đơn cần giao, khách còn nợ, cảnh báo hoa sắp hết hoặc sắp héo, sinh nhật khách, nhắc ngày lễ.
 - **Đơn hàng:**

@@ -135,9 +135,9 @@ export const errMsg = (e) => {
  * Mở bottom sheet chứa form. onSubmit(formData, form) trả về true/undefined để đóng, false để giữ.
  * Trả về phần tử <dialog> để gắn thêm sự kiện nếu cần.
  */
-export function sheet({ title, body, submit = 'Lưu', onSubmit, onMount, danger }) {
+export function sheet({ title, body, submit = 'Lưu', onSubmit, onMount, danger, wide }) {
   const dlg = document.createElement('dialog');
-  dlg.className = 'sheet';
+  dlg.className = wide ? 'sheet wide' : 'sheet';
   dlg.innerHTML = html`
     <form method="dialog" class="sheet-form" novalidate>
       <div class="sheet-head">

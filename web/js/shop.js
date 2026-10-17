@@ -21,6 +21,9 @@ function render(root, { shop, products }) {
   for (const c of products.flatMap((p) => p.categories || [])) catCount.set(c, (catCount.get(c) || 0) + 1);
   const cats = [...catCount.keys()].sort((a, b) => catCount.get(b) - catCount.get(a) || a.localeCompare(b, 'vi'));
   const st = { cat: '', q: '' };
+  // Ảnh ghép đầu trang trên máy tính: ưu tiên mẫu đã có ảnh.
+  const artItems = [...products.filter((p) => p.photo_url), ...products.filter((p) => !p.photo_url)].slice(0, 3);
+  const art = artItems.length === 3 ? html`<div class="hero-art" aria-hidden="true">${artItems.map((p) => productImage(p, 'art-img'))}</div>` : '';
   document.title = `${shop.shop_name} · Mẫu hoa & bảng giá`;
 
   const note = (p) => (holiday && holiday.daysLeft > 0 && p.holiday_price != null && p.holiday_price !== p.price
@@ -33,26 +36,30 @@ function render(root, { shop, products }) {
     <header class="store-bar">
       <div class="store-wrap">
         <div class="brand"><img src="../icons/icon.svg" alt=""><span class="brand-name">${shop.shop_name}</span></div>
-        ${phone && html`<a class="icon-btn" href="tel:${phone}" aria-label="Gọi shop">${raw(ICON.phone)}</a>`}
+        <div class="head-cta">${contactButtons(false)}</div>
+        ${phone && html`<a class="icon-btn head-call" href="tel:${phone}" aria-label="Gọi shop">${raw(ICON.phone)}</a>`}
       </div>
     </header>
     <div class="store-wrap">
-      <section class="hero">
-        <h1>${shop.shop_name}</h1>
-        <p class="intro">${shop.intro || 'Hoa tươi mỗi ngày · Nhận đặt bó hoa, giỏ hoa, giao tận nơi.'}</p>
-        <div class="meta">
-          ${shop.open_hours && html`<span>${raw(ICON.clock)}${shop.open_hours}</span>`}
-          ${phone && html`<a href="tel:${phone}">${raw(ICON.phone)}${phoneFmt(phone)}</a>`}
-          ${shop.address && html`<a href="${mapUrl}" target="_blank" rel="noopener">${raw(ICON.pin)}${shop.address}</a>`}
+      <section class="hero ${art ? 'has-art' : ''}">
+        <div class="hero-text">
+          <h1>${shop.shop_name}</h1>
+          <p class="intro">${shop.intro || 'Hoa tươi mỗi ngày · Nhận đặt bó hoa, giỏ hoa, giao tận nơi.'}</p>
+          <div class="meta">
+            ${shop.open_hours && html`<span>${raw(ICON.clock)}${shop.open_hours}</span>`}
+            ${phone && html`<a href="tel:${phone}">${raw(ICON.phone)}${phoneFmt(phone)}</a>`}
+            ${shop.address && html`<a href="${mapUrl}" target="_blank" rel="noopener">${raw(ICON.pin)}${shop.address}</a>`}
+          </div>
+          ${(zaloUrl || phone) && html`<div class="cta">${contactButtons(true)}</div>`}
         </div>
-        ${(zaloUrl || phone) && html`<div class="cta">${contactButtons(true)}</div>`}
-        ${holiday && html`
-          <div class="card rose season">
-            <div><b>${holiday.daysLeft === 0 ? `Hôm nay là ${ddmm(holiday.date)}` : `Đặt trước hoa ${ddmm(holiday.date)}`}</b>
-              <div class="small" style="color: #6B4552">${holiday.daysLeft === 0 ? 'Shop vẫn nhận đơn giao trong ngày.' : `Còn ${holiday.daysLeft} ngày. Đặt sớm để giữ mẫu và giờ giao.`}</div></div>
-            ${zaloUrl && html`<a class="btn btn-primary btn-sm" href="${zaloUrl}" target="_blank" rel="noopener" data-zalo>Đặt ngay</a>`}
-          </div>`}
+        ${art}
       </section>
+      ${holiday && html`
+        <div class="card rose season">
+          <div><b>${holiday.daysLeft === 0 ? `Hôm nay là ${ddmm(holiday.date)}` : `Đặt trước hoa ${ddmm(holiday.date)}`}</b>
+            <div class="small" style="color: #6B4552">${holiday.daysLeft === 0 ? 'Shop vẫn nhận đơn giao trong ngày.' : `Còn ${holiday.daysLeft} ngày. Đặt sớm để giữ mẫu và giờ giao.`}</div></div>
+          ${zaloUrl && html`<a class="btn btn-primary btn-sm" href="${zaloUrl}" target="_blank" rel="noopener" data-zalo>Đặt ngay</a>`}
+        </div>`}
 
       <section aria-labelledby="mau-hoa">
         <div class="catalog-head">
@@ -122,8 +129,10 @@ function render(root, { shop, products }) {
     const price = priceOf(p, t, shop.holidays);
     sheet({
       title: p.name,
-      body: html`
+      wide: true,
+      body: html`<div class="detail-layout">
         ${productImage(p, 'detail-img')}
+        <div class="stack detail-info">
         ${p.categories?.length ? html`<div class="row" style="justify-content: flex-start; flex-wrap: wrap; gap: 6px">${p.categories.map((c) => html`<span class="chip c-rose">${c}</span>`)}</div>` : ''}
         <div class="detail-price">${money(price)}</div>
         ${note(p) && html`<div class="p-note" style="font-size: 13px">${note(p)}</div>`}
@@ -132,7 +141,8 @@ function render(root, { shop, products }) {
           ${zaloUrl && html`<a class="btn btn-primary btn-lg" href="${zaloUrl}" target="_blank" rel="noopener" id="order-zalo">${raw(ICON.chat)}Đặt mẫu này qua Zalo</a>`}
           ${phone && html`<a class="btn btn-lg" href="tel:${phone}">${raw(ICON.phone)}Gọi đặt hoa</a>`}
           ${zaloUrl && html`<div class="tip">Bấm “Đặt qua Zalo”, tên mẫu hoa được chép sẵn để bạn dán vào tin nhắn.</div>`}
-        </div>`,
+        </div>
+        </div></div>`,
       onMount(dlg) {
         dlg.querySelector('#order-zalo')?.addEventListener('click', () => {
           copyOrder(`Chào ${shop.shop_name}, mình muốn đặt mẫu "${p.name}" (${money(price)}). Shop tư vấn giúp mình nhé!`);

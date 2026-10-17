@@ -42,6 +42,8 @@ try {
   await step('Tổng quan', async () => {
     await page.goto(base);
     await page.getByRole('heading', { name: 'Tổng quan' }).waitFor();
+    assert.equal(await page.locator('#side').isVisible(), false, 'điện thoại: không có menu trái');
+    assert.ok(await page.locator('#tabs').isVisible(), 'điện thoại: có thanh menu dưới');
     assert.equal(await page.locator('.list a.item[href^="#/don/"]').count(), 3);
     await page.getByText('Cảnh báo kho').waitFor();
     await shot('01-tong-quan');
@@ -181,6 +183,54 @@ try {
     await page.locator('dialog [data-close]').click();
     await page.setViewportSize({ width: 1280, height: 900 });
     await shot('12-trang-khach-may-tinh');
+    await page.setViewportSize({ width: 390, height: 844 });
+  });
+
+  await step('Laptop 1366px: menu trái, chia cột, hộp thoại giữa màn hình', async () => {
+    await page.setViewportSize({ width: 1366, height: 820 });
+    await page.goto(`${base}#/`);
+    await page.locator('#side .side-link.on', { hasText: 'Tổng quan' }).waitFor();
+    assert.equal(await page.locator('#tabs').isVisible(), false, 'laptop: ẩn thanh menu dưới');
+    const tops = await page.locator('.stats > .card').evaluateAll((els) => els.map((e) => Math.round(e.getBoundingClientRect().top)));
+    assert.equal(new Set(tops).size, 1, '4 ô số liệu nằm trên một hàng');
+    const colLefts = await page.locator('.cols-main > .col').evaluateAll((els) => els.map((e) => Math.round(e.getBoundingClientRect().left)));
+    assert.equal(new Set(colLefts).size, 2, 'tổng quan chia 2 cột');
+    await shot('20-laptop-tong-quan');
+
+    await page.locator('#side a[href="#/don"]').click();
+    await page.getByRole('heading', { name: 'Đơn hàng' }).waitFor();
+    await page.locator('[data-d=upcoming]').click();
+    await page.locator('#order-list > .order-card').first().waitFor();
+    const cardLefts = await page.locator('#order-list > .order-card').evaluateAll((els) => new Set(els.map((e) => Math.round(e.getBoundingClientRect().left))).size);
+    assert.ok(cardLefts >= 2, 'đơn hàng xếp nhiều cột');
+    await shot('21-laptop-don-hang');
+    await page.locator('#order-list > .order-card').first().click();
+    await page.getByRole('heading', { name: /Đơn #\d+/ }).waitFor();
+    await shot('22-laptop-chi-tiet-don');
+
+    await page.locator('#side .side-create').click();
+    await page.getByRole('heading', { name: 'Tạo đơn mới' }).waitFor();
+    await shot('23-laptop-tao-don');
+    await page.getByRole('button', { name: '+ Thêm sản phẩm' }).click();
+    const box = await page.locator('dialog.sheet').boundingBox();
+    assert.ok(box.x > 100 && box.y > 20, 'hộp thoại nằm giữa màn hình');
+    await page.locator('dialog [data-close]').click();
+
+    await page.locator('#side a[href="#/kho"]').click();
+    await page.getByRole('heading', { name: 'Kho hoa' }).waitFor();
+    await shot('24-laptop-kho');
+    await page.locator('#side a[href="#/bao-cao"]').click();
+    await page.getByText('Doanh thu theo ngày').waitFor();
+    await shot('25-laptop-bao-cao');
+
+    await page.goto(`${base}shop/`);
+    await page.locator('.p-card').first().waitFor();
+    assert.equal(await page.locator('.dock').isVisible(), false, 'laptop: không cần thanh nút ở đáy');
+    assert.ok(await page.locator('.head-cta').isVisible(), 'laptop: nút Zalo/Gọi trên thanh đầu trang');
+    await shot('26-laptop-trang-khach');
+    await page.locator('.p-card').first().click();
+    await page.locator('dialog.sheet.wide .detail-price').waitFor();
+    await shot('27-laptop-chi-tiet-mau');
     await page.setViewportSize({ width: 390, height: 844 });
   });
 

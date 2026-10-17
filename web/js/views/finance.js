@@ -29,12 +29,14 @@ export async function expenses({ el, query }) {
   el.innerHTML = html`
     <header class="top"><div class="row" style="gap: 4px"><a class="back" href="#/them" aria-label="Quay lại">${raw(ICON.back)}</a><h1>Thu chi</h1></div>${monthNav(month)}</header>
     <div class="page">
+      <div class="cols"><div class="col">
       <div class="card stack">
         <div class="row"><span class="muted">Tổng chi ${monthLabel(month).toLowerCase()}</span><b style="font-size: 20px">${money(total)}</b></div>
         ${catList.map(([c, v]) => html`<div><div class="row" style="font-size: 14px"><span>${c}</span><b>${moneyShort(v)}</b></div><div class="track"><span style="width: ${(v / total) * 100}%"></span></div></div>`)}
         <a class="link-btn" href="#/bao-cao?m=${month}">Xem doanh thu & lãi ›</a>
       </div>
       <button class="btn btn-primary" id="add">+ Thêm khoản chi</button>
+      </div><div class="col">
       ${rows.length ? html`<div class="list">
         ${rows.map((e) => html`
           <div class="item">
@@ -42,6 +44,7 @@ export async function expenses({ el, query }) {
             <button class="icon-btn plain" data-del="${e.id}" aria-label="Xóa khoản chi">${raw(ICON.trash)}</button>
           </div>`)}
       </div>` : html`<div class="card empty">Tháng này chưa có khoản chi. Phiếu nhập hoa được tự ghi vào đây.</div>`}
+      </div></div>
     </div>`.s;
   bindMonthNav(el);
   el.querySelectorAll('[data-del]').forEach((b) => {
@@ -88,7 +91,7 @@ export async function report({ el, query }) {
   el.innerHTML = html`
     <header class="top"><div class="row" style="gap: 4px"><a class="back" href="#/them" aria-label="Quay lại">${raw(ICON.back)}</a><h1>Báo cáo</h1></div>${monthNav(month)}</header>
     <div class="page">
-      <div class="grid2">
+      <div class="grid2 stats">
         <div class="card stat"><div class="label">Doanh thu</div><div class="value">${moneyShort(r.revenue)}</div>
           ${r.change != null ? html`<div class="small strong ${r.change >= 0 ? 'pos' : 'neg'}">${r.change >= 0 ? '↑' : '↓'} ${Math.abs(Math.round(r.change * 100))}% so với tháng trước</div>` : html`<div class="small muted">${r.orderCount} đơn</div>`}</div>
         <div class="card stat"><div class="label">Chi phí</div><div class="value">${moneyShort(r.expense)}</div><div class="small muted">${r.expenseByCategory[0] ? `${r.expenseByCategory[0].category} ${Math.round((r.expenseByCategory[0].amount / r.expense) * 100)}%` : 'chưa ghi'}</div></div>
@@ -104,6 +107,7 @@ export async function report({ el, query }) {
         <div class="row muted small"><span>${ddmm(from)}</span><span>${best.revenue ? `Cao nhất ${ddmm(best.date)} · ${moneyShort(best.revenue)}` : 'Chưa có doanh thu'}</span><span>${ddmm(to)}</span></div>
       </section>
 
+      <div class="cols">
       <section class="card stack">
         <h2 style="margin: 0">Bán chạy</h2>
         ${r.topProducts.length ? r.topProducts.map((p, i) => html`<div class="row" style="font-size: 14px"><span><b>${i + 1}.</b> ${p.name}</span><span class="muted nowrap">${num(p.qty)} · ${moneyShort(p.revenue)}</span></div>`) : html`<div class="muted">Chưa có đơn.</div>`}
@@ -113,6 +117,7 @@ export async function report({ el, query }) {
         <div class="row"><h2 style="margin: 0">Chi phí theo loại</h2><a class="link-btn" href="#/thu-chi?m=${month}">Chi tiết ›</a></div>
         ${r.expenseByCategory.length ? r.expenseByCategory.map((e) => html`<div><div class="row" style="font-size: 14px"><span>${e.category}</span><b>${moneyShort(e.amount)}</b></div><div class="track"><span style="width: ${(e.amount / r.expense) * 100}%"></span></div></div>`) : html`<div class="muted">Chưa có khoản chi.</div>`}
       </section>
+      </div>
 
       <button class="btn btn-outline btn-lg" id="csv">${raw(ICON.download)}Xuất Excel đơn hàng tháng</button>
     </div>`.s;

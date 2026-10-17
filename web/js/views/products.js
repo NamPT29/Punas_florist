@@ -10,7 +10,7 @@ export async function list({ el }) {
     <header class="top-nav"><a class="back" href="#/them">${raw(ICON.back)}Thêm</a><h1>Sản phẩm</h1><a class="btn btn-sm btn-primary" href="#/san-pham/moi" style="margin-right: 8px">+ Thêm</a></header>
     <div class="page">
       <label class="search">${raw(ICON.search)}<input type="search" id="q" placeholder="Tìm sản phẩm…" aria-label="Tìm sản phẩm"></label>
-      ${products.length ? html`<div class="list">
+      ${products.length ? html`<div class="list list-grid">
         ${products.map((p) => {
           const cost = productCost(p, materials);
           const margin = p.price ? (p.price - cost) / p.price : 0;
@@ -51,6 +51,7 @@ export async function edit({ el, params }) {
       <label class="check" style="margin-right: 8px; color: var(--green); font-weight: 600"><input type="checkbox" id="active" ${st.active ? 'checked' : ''} style="accent-color: var(--green)">Đang bán</label>
     </header>
     <form class="page" id="f" novalidate>
+      <div class="cols"><div class="col">
       <div class="row" style="justify-content: flex-start; gap: 12px">
         <label class="photo-drop" style="width: 104px; height: 104px; min-height: 0; flex-shrink: 0; padding: 0" aria-label="Ảnh sản phẩm">
           <span id="photo-box">${st.photo_url ? html`<img src="${st.photo_url}" alt="" style="width: 104px; height: 104px; object-fit: cover">` : html`${raw(ICON.camera)}<span class="small">Thêm ảnh</span>`}</span>
@@ -70,7 +71,7 @@ export async function edit({ el, params }) {
         <button type="button" class="btn btn-dashed" id="add-comp" ${usable.length ? '' : 'disabled'}>+ Thêm hoa / phụ liệu</button>
         ${usable.length ? '' : html`<div class="muted">Thêm hoa vào <a href="#/kho">Kho</a> trước để lập công thức.</div>`}
       </section>
-
+      </div><div class="col">
       <section class="card green">
         <div class="grid3" style="text-align: center; align-items: end">
           <div><div class="muted">Giá vốn</div><b style="font-size: 16px" id="cost"></b></div>
@@ -84,6 +85,7 @@ export async function edit({ el, params }) {
         <div class="muted">Tự áp dụng khi ngày giao là ngày lễ trong Cài đặt (14/2, 8/3, 20/10…). Để trống nếu không đổi giá.</div>
         <input class="inp" name="holiday" data-money inputmode="numeric" value="${st.holiday_price != null ? num(st.holiday_price) : ''}" placeholder="Giống giá thường" aria-label="Giá ngày lễ">
       </section>
+      </div></div>
     </form>
     <div class="footer-bar"><div><button class="btn btn-primary btn-lg btn-block" id="save">Lưu sản phẩm</button></div></div>`.s;
 

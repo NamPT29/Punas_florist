@@ -31,7 +31,7 @@ export async function list({ el, query }) {
       <div class="pills">${pill('', 'Tất cả')}${pill('bday', `Sinh nhật tháng ${Number(month)}`)}${pill('loyal', 'Khách quen')}${pill('debt', 'Còn nợ')}</div>
     </header>
     <div class="page">
-      ${shown.length ? html`<div class="list">
+      ${shown.length ? html`<div class="list list-grid">
         ${shown.map((c) => {
           const b = soon.get(c.id);
           return html`
@@ -99,6 +99,7 @@ export async function detail({ el, params }) {
   el.innerHTML = html`
     <header class="top-nav"><a class="back" href="#/khach">${raw(ICON.back)}Khách hàng</a><h1></h1><button class="link-btn" id="edit" style="margin-right: 12px; font-size: 15px">Sửa</button></header>
     <div class="page">
+      <div class="cols"><div class="col">
       <div class="row" style="justify-content: flex-start; gap: 14px">
         <div class="avatar ${avatarCls(c.id)}" style="width: 60px; height: 60px; border-radius: 30px; font-size: 22px">${initials(c.name)}</div>
         <div class="grow"><h1 style="font-size: 24px">${c.name}</h1><div class="muted">${phoneFmt(c.phone)}${c.birthday ? ` · SN ${ddmm(c.birthday)}` : ''}</div></div>
@@ -115,6 +116,7 @@ export async function detail({ el, params }) {
         <div class="card"><div class="muted">Đã mua</div><b style="font-size: 18px">${moneyShort(c.total_spent)}</b></div>
         <div class="card"><div class="muted">Còn nợ</div><b style="font-size: 18px" class="${c.debt ? 'neg' : ''}">${moneyShort(c.debt)}</b></div>
       </div>
+      </div><div class="col">
       <div class="sec"><h2>Lịch sử đơn</h2></div>
       ${orders.length ? html`<div class="list">
         ${orders.map((o) => html`
@@ -123,6 +125,7 @@ export async function detail({ el, params }) {
             ${statusChip(o.status)}
           </a>`)}
       </div>` : html`<div class="card empty">Chưa có đơn nào.</div>`}
+      </div></div>
     </div>`.s;
   el.querySelector('#edit').onclick = () => editSheet(c);
 }

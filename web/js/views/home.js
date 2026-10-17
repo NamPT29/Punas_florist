@@ -33,13 +33,14 @@ export async function render({ el }) {
           ${d.holiday.orders ? html`<a class="btn btn-primary btn-sm" href="#/don?d=${d.holiday.date}">Xem đơn</a>` : html`<a class="btn btn-primary btn-sm" href="#/don/moi">+ Tạo đơn</a>`}
         </div>`}
 
-      <div class="grid2">
+      <div class="grid2 stats">
         <div class="card stat"><div class="label">Doanh thu hôm nay</div><div class="value">${money(d.revenueToday)}</div></div>
         <a class="card stat" href="#/don" style="color: inherit"><div class="label">Đơn hôm nay</div><div class="value">${d.ordersToday.length} <span class="small pos" style="font-weight: 500">· ${d.deliveredToday} đã giao</span></div></a>
         <a class="card stat" href="#/bao-cao" style="color: inherit"><div class="label">Doanh thu tháng ${Number(t.slice(5, 7))}</div><div class="value">${moneyShort(d.revenueMonth)}</div></a>
         <a class="card stat" href="#/don?d=no" style="color: inherit"><div class="label">Khách còn nợ</div><div class="value ${d.unpaidTotal ? 'neg' : ''}">${moneyShort(d.unpaidTotal)}</div></a>
       </div>
 
+      <div class="cols cols-main"><div class="col">
       <div class="sec"><h2>Cần giao hôm nay</h2><a href="#/don">Tất cả</a></div>
       ${d.ordersToday.length ? html`
         <div class="list">
@@ -52,7 +53,8 @@ export async function render({ el }) {
         </div>` : html`
         <div class="card empty">Hôm nay chưa có đơn cần giao.<br><a class="btn btn-outline" href="#/don/moi">+ Tạo đơn</a></div>`}
 
-      ${d.stockAlerts.length > 0 && html`
+      </div><div class="col">
+      ${d.stockAlerts.length > 0 ? html`
         <div class="sec"><h2>Cảnh báo kho</h2><a href="#/kho">Mở kho</a></div>
         <div class="list">
           ${d.stockAlerts.slice(0, 5).map((m) => html`
@@ -64,7 +66,9 @@ export async function render({ el }) {
                     : `nhập ${ddmm(m.last_import)}, héo khoảng ${ddmm(m.expireDate)}`}
               </div>
             </a>`)}
-        </div>`}
+        </div>` : html`
+        <div class="sec"><h2>Cảnh báo kho</h2><a href="#/kho">Mở kho</a></div>
+        <div class="card muted">Kho ổn: không có hoa sắp hết hay sắp héo.</div>`}
 
       ${d.birthdays.length > 0 && html`
         <div class="sec"><h2>Sinh nhật 7 ngày tới</h2><a href="#/khach">Khách hàng</a></div>
@@ -79,5 +83,6 @@ export async function render({ el }) {
               <a class="btn btn-sm" href="tel:${phoneDigits(c.phone)}">Gọi</a>
             </div>`)}
         </div>`}
+      </div></div>
     </div>`.s;
 }

@@ -70,7 +70,7 @@ export async function list({ el, query }) {
         ${STATUS_ORDER.filter((s) => counts[s]).map((s) => html`<button class="pill ${status === s ? 'on' : ''}" data-s="${s}">${STATUS[s].label} ${counts[s]}</button>`)}
       </div>
     </header>
-    <div class="page" id="order-list"></div>`.s;
+    <div class="page cards" id="order-list"></div>`.s;
 
   const listEl = el.querySelector('#order-list');
   let searchPool = null;
@@ -138,6 +138,7 @@ export async function create({ el, query }) {
       <span style="width: 52px"></span>
     </header>
     <form class="page" id="f" novalidate>
+      <div class="cols"><div class="col">
       <section class="card stack">
         <h2>Khách đặt</h2>
         <label class="field">Số điện thoại<input name="phone" type="tel" inputmode="tel" autocomplete="off" value="${phoneFmt(st.phone)}" placeholder="0903 123 456"></label>
@@ -169,6 +170,7 @@ export async function create({ el, query }) {
         <input class="inp hidden" type="time" name="time" id="time" aria-label="Giờ giao cụ thể" value="${st.time}">
       </section>
 
+      </div><div class="col">
       <section class="card stack">
         <h2>Sản phẩm</h2>
         <div id="items" class="stack"></div>
@@ -190,6 +192,7 @@ export async function create({ el, query }) {
           <button type="button" class="opt" data-pay="the">Thẻ / Ví</button>
         </div>
       </section>
+      </div></div>
     </form>
     <div class="footer-bar"><div><button class="btn btn-primary btn-lg btn-block" id="save" type="button">Lưu đơn</button></div></div>`.s;
 
@@ -384,6 +387,7 @@ export async function detail({ el, params }) {
     </header>
     <div class="print-only" style="padding: 16px"><h1>${settings?.shop_name || ''}</h1><div>${settings?.phone || ''} ${settings?.address || ''}</div><h2 style="margin-top: 8px">Phiếu đơn #${o.id}</h2></div>
     <div class="page">
+      <div class="cols"><div class="col">
       ${o.status === 'huy' ? html`<div class="card" style="text-align: center"><span class="chip">Đơn đã hủy</span></div>` : html`
         <div class="card progress no-print">
           ${flow.map((s, i) => html`
@@ -418,6 +422,7 @@ export async function detail({ el, params }) {
         </div>
       </section>
 
+      </div><div class="col">
       <section class="card stack">
         <div class="label-up" style="margin: 0">Sản phẩm</div>
         ${o.items.map((i) => html`<div class="row" style="font-size: 14px"><span>${i.name} × ${i.qty}</span><span>${money(i.price * i.qty)}</span></div>`)}
@@ -448,6 +453,7 @@ export async function detail({ el, params }) {
           <label class="photo-drop">${raw(ICON.camera)}<span id="photo-label">Chụp ảnh bó hoa để gửi khách</span><input type="file" accept="image/*" capture="environment" id="photo"></label>`}
       </section>
       ${ended && html`<a class="btn btn-outline btn-block no-print" href="#/don/moi?from=${o.id}">Đặt lại đơn này</a>`}
+      </div></div>
     </div>
     ${!ended && html`
       <div class="footer-bar"><div>
