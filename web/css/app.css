@@ -186,6 +186,8 @@ button.item { width: 100%; border: 0; background: none; text-align: left; border
   background: rgba(255,255,255,.96); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
   border-top: 1px solid var(--line);
   display: flex; align-items: center; justify-content: space-around;
+  /* Màn hình rộng (máy tính, iPad): giữ các nút gọn ở giữa như trên điện thoại. */
+  padding-left: max(0px, calc((100% - 640px) / 2)); padding-right: max(0px, calc((100% - 640px) / 2));
 }
 .tab { display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 11px; color: var(--muted); min-width: 60px; min-height: 48px; justify-content: center; }
 .tab:hover { color: var(--ink); }
