@@ -90,7 +90,7 @@ export async function render({ el }) {
       ${db.mode === 'demo' ? html`
         <div class="card stack">
           <b>Đang chạy bản dùng thử</b>
-          <div class="muted">Dữ liệu chỉ lưu trên máy này. Khi kết nối Supabase (README), dữ liệu sẽ lưu online và dùng chung cho cả shop.</div>
+          <div class="muted">Dữ liệu chỉ lưu trong trình duyệt này, riêng cho địa chỉ ${location.host}. Mở trang khách bằng nút “Trang khách” để thấy đúng dữ liệu. Khi kết nối Supabase (README), dữ liệu lưu online và dùng chung cho mọi máy, mọi địa chỉ.</div>
           <button class="btn btn-danger" id="reset">Xóa và tạo lại dữ liệu mẫu</button>
         </div>` : html`<button class="btn btn-ghost btn-lg" id="logout">Đăng xuất</button>`}
       </div></div>

@@ -39,6 +39,8 @@ tests/               Kiểm thử (logic, SQL, giao diện)
 
 Khi `web/js/config.js` còn để trống, app chạy **bản dùng thử**: có sẵn dữ liệu mẫu, dữ liệu chỉ lưu trên máy đang mở. Bạn có thể dùng bản này để xem thử trước khi cài Supabase.
 
+Lưu ý: bản dùng thử lưu **riêng cho từng địa chỉ**. Ví dụ `127.0.0.1:8080` và `192.168.1.148:8080` là hai kho dữ liệu khác nhau, dù cùng một máy. Hãy mở trang quản lý và trang khách bằng **cùng một địa chỉ**. Khi đã nối Supabase thì mọi máy, mọi địa chỉ dùng chung dữ liệu.
+
 ## Cài đặt (khoảng 20 phút, miễn phí)
 
 ### 1. Tạo cơ sở dữ liệu Supabase

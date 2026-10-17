@@ -200,7 +200,11 @@ async function start() {
   const root = document.getElementById('store');
   try {
     const db = await loadBackend();
-    if (db.mode === 'demo') document.getElementById('demo').classList.remove('hidden');
+    if (db.mode === 'demo') {
+      const note = document.getElementById('demo');
+      note.textContent = `Bản dùng thử · dữ liệu mẫu lưu tại địa chỉ ${location.host}`;
+      note.classList.remove('hidden');
+    }
     render(root, await db.publicCatalog());
   } catch (e) {
     console.error(e);

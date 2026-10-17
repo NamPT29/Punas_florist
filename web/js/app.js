@@ -150,7 +150,12 @@ export async function reloadUser() {
 async function start() {
   try {
     app.db = await loadBackend();
-    if (app.db.mode === 'demo') document.getElementById('demo').classList.remove('hidden');
+    if (app.db.mode === 'demo') {
+      // Dữ liệu dùng thử nằm trong trình duyệt, riêng cho từng địa chỉ (127.0.0.1 khác 192.168.x.x).
+      const note = document.getElementById('demo');
+      note.textContent = `Bản dùng thử · dữ liệu chỉ lưu tại địa chỉ ${location.host} trên trình duyệt này`;
+      note.classList.remove('hidden');
+    }
     await reloadUser();
   } catch (e) {
     console.error(e);
