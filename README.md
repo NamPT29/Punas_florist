@@ -10,6 +10,7 @@ Giao diện tự đổi theo màn hình:
 **Chức năng**
 - **Tổng quan:** doanh thu hôm nay và tháng này, đơn cần giao, khách còn nợ, cảnh báo hoa sắp hết hoặc sắp héo, sinh nhật khách, nhắc ngày lễ.
 - **Đơn hàng:**
+  - Xem đơn hôm nay, ngày mai, một ngày bất kỳ, hoặc theo kỳ (tuần này, tháng này, tự chọn từ ngày đến ngày).
   - Tạo đơn nhanh theo SĐT, tự nhận ra khách cũ.
   - Người nhận riêng, khung giờ giao, lời thiệp, giảm giá, phí ship.
   - Bán tại quầy, đặt lại đơn cũ.
@@ -89,9 +90,9 @@ Khóa này được phép công khai, dữ liệu được bảo vệ bằng đ�
 ### 6. Đưa app lên mạng bằng Cloudflare Pages (miễn phí)
 1. Đăng ký https://dash.cloudflare.com, vào **Workers & Pages → Create → Pages → Connect to Git**, chọn repo `Punas_florist`.
 2. Framework preset: **None**. Build command: để trống. **Build output directory: `web`**.
-3. Bấm **Deploy**. Bạn sẽ có địa chỉ dạng `https://punas-florist.pages.dev`:
-   - `https://punas-florist.pages.dev`: **trang cho khách** (trang chính, gửi link này cho khách).
-   - `https://punas-florist.pages.dev/quan-ly/`: **trang quản lý** của shop (cần đăng nhập).
+3. Bấm **Deploy**. Bạn sẽ có địa chỉ dạng `https://punas.pages.dev`:
+   - `https://punas.pages.dev`: **trang cho khách** (trang chính, gửi link này cho khách).
+   - `https://punas.pages.dev/quan-ly/`: **trang quản lý** của shop (cần đăng nhập).
 
 Từ đó mỗi lần push code lên GitHub, Cloudflare sẽ tự cập nhật app.
 
@@ -99,7 +100,7 @@ Từ đó mỗi lần push code lên GitHub, Cloudflare sẽ tự cập nhật a
 Mở **trang quản lý** (`…/quan-ly/`) bằng **Safari** → nút **Chia sẻ** → **Thêm vào MH chính**. Đăng nhập một lần là dùng như app thường. Điện thoại Android, iPad và máy tính ở quầy cũng dùng được, chung dữ liệu.
 
 ## Trang cho khách xem hoa
-- Địa chỉ: chính là tên miền, ví dụ `https://punas-florist.pages.dev`. Trong app quản lý, bấm **Trang khách** ở Tổng quan, hoặc vào **Thêm → Trang cho khách xem hoa** để mở hay chia sẻ link. Link cũ có `/shop/` vẫn tự chuyển về trang chính.
+- Địa chỉ: chính là tên miền, ví dụ `https://punas.pages.dev`. Trong app quản lý, bấm **Trang khách** ở Tổng quan, hoặc vào **Thêm → Trang cho khách xem hoa** để mở hay chia sẻ link. Link cũ có `/shop/` vẫn tự chuyển về trang chính.
 - Trang lấy dữ liệu từ app quản lý. Sản phẩm nào **Đang bán** thì hiện, bỏ chọn thì ẩn. Sửa giá, ảnh hay mô tả xong là trang tự cập nhật.
 - Vào **Thêm → Thông tin shop** để điền **số Zalo**, **giờ mở cửa** và **lời giới thiệu**. Mỗi sản phẩm có ô **Mô tả cho khách**.
 - Cũng trong đó, tải **ảnh bìa** (ảnh lớn phủ kín đầu trang) và điền **khẩu hiệu** (chữ lớn trên ảnh). Nên dùng ảnh ngang, rõ nét, chụp hoa thật của shop. Chưa có ảnh thì đầu trang dùng nền hoa văn tối màu.

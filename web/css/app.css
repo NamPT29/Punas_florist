@@ -132,6 +132,10 @@ button.item { width: 100%; border: 0; background: none; text-align: left; border
 .pill { flex-shrink: 0; min-height: 38px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); font-size: 13px; font-weight: 500; display: inline-flex; align-items: center; gap: 6px; color: var(--ink); position: relative; }
 .pill.on { background: var(--rose-soft); border-color: var(--rose-line); color: var(--rose-ink); font-weight: 600; }
 .pill input[type=date] { position: absolute; inset: 0; opacity: 0; width: 100%; }
+/* Hàng chọn ngày ở Đơn hàng: trên điện thoại 4 nút chia đều, vừa một hàng. */
+@media (max-width: 699px) {
+  .pills.when .pill { flex: 1 0 auto; justify-content: center; padding: 0 10px; }
+}
 
 /* Lựa chọn dạng lưới (ngày, khung giờ, thanh toán) */
 .opts { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; }

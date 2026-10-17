@@ -1,7 +1,7 @@
 // Đơn hàng: danh sách, tạo đơn, chi tiết đơn.
 import { app, refresh, setQuery } from '../app.js';
 import {
-  html, raw, ICON, money, num, today, addDays, ddmm, dateShort, dateLong, dateRelative, phoneDigits, phoneFmt,
+  html, raw, ICON, money, num, today, addDays, parseIso, monthOf, addMonths, monthRange, ddmm, dateShort, dateLong, dateRelative, phoneDigits, phoneFmt,
   parseMoney, bindMoneyInputs, STATUS, PAYMENT, statusChip, toast, errMsg, sheet, shrinkImage, fold, itemsLabel,
 } from '../util.js';
 import { nextHoliday, priceOf, sortOrders } from '../stats.js';
@@ -33,37 +33,85 @@ const matches = (o, q) => {
 };
 
 // ===================== Danh sách =====================
-export async function list({ el, query }) {
-  const { db, settings } = app;
+const ISO = /^\d{4}-\d{2}-\d{2}$/;
+const RANGE = /^(\d{4}-\d{2}-\d{2})~(\d{4}-\d{2}-\d{2})$/;
+
+/** "Tháng 10" khi trọn một tháng, còn lại "01/10 – 15/10". */
+function rangeLabel(from, to) {
+  const { to: end } = monthRange(monthOf(from));
+  if (from.endsWith('-01') && to === end) {
+    return `Tháng ${Number(from.slice(5, 7))}${from.slice(0, 4) === today().slice(0, 4) ? '' : `/${from.slice(0, 4)}`}`;
+  }
+  return `${ddmm(from)} – ${ddmm(to)}`;
+}
+
+/** Hộp chọn kỳ: các kỳ hay dùng, hoặc tự chọn từ ngày đến ngày. */
+function pickRange(cur) {
   const t = today();
-  const d = query.d || 'today';
-  const holiday = nextHoliday(settings?.holidays, t, 30);
+  const monday = addDays(t, -((parseIso(t).getDay() + 6) % 7));
+  const thisMonth = monthRange(monthOf(t));
+  const lastMonth = monthRange(addMonths(monthOf(t), -1));
+  const presets = [
+    ['7 ngày tới', t, addDays(t, 6)],
+    ['Tuần này', monday, addDays(monday, 6)],
+    ['Tháng này', thisMonth.from, thisMonth.to],
+    ['Tháng trước', lastMonth.from, lastMonth.to],
+    ['7 ngày qua', addDays(t, -7), addDays(t, -1)],
+    ['30 ngày qua', addDays(t, -30), addDays(t, -1)],
+  ];
+  const go = (from, to) => setQuery({ d: `${from}~${to}`, s: '', q: '' });
+  sheet({
+    title: 'Chọn kỳ',
+    submit: 'Xem đơn',
+    body: html`
+      <div class="opts" style="grid-template-columns: 1fr 1fr">
+        ${presets.map(([label, from, to]) => html`<button type="button" class="opt ${cur?.[1] === from && cur?.[2] === to ? 'on' : ''}" data-from="${from}" data-to="${to}">${label}</button>`)}
+      </div>
+      <div class="muted small">Hoặc tự chọn:</div>
+      <div class="grid2">
+        <label class="field">Từ ngày<input type="date" name="from" value="${cur?.[1] || t}"></label>
+        <label class="field">Đến ngày<input type="date" name="to" value="${cur?.[2] || addDays(t, 6)}"></label>
+      </div>`,
+    onMount(dlg, close) {
+      dlg.querySelectorAll('[data-from]').forEach((b) => { b.onclick = () => { close(); go(b.dataset.from, b.dataset.to); }; });
+    },
+    onSubmit(fd) {
+      const [from, to] = [fd.get('from'), fd.get('to')].sort();
+      if (!from) { toast('Chọn đủ từ ngày và đến ngày', 'error'); return false; }
+      go(from, to);
+    },
+  });
+}
+
+export async function list({ el, query }) {
+  const { db } = app;
+  const t = today();
+  // Đường dẫn cũ (Sắp tới, Đã qua…) hay sai thì về Hôm nay.
+  const d = ['today', 'tomorrow', 'no'].includes(query.d) || ISO.test(query.d) || RANGE.test(query.d) ? query.d : 'today';
+  const range = RANGE.exec(d);
+  const day = ISO.test(d) ? d : null;
   let orders;
-  if (d === 'upcoming') orders = await db.listOrders({ from: t, limit: 500 });
-  else if (d === 'no') orders = await db.listOrders({ unpaidOnly: true, limit: 1000 });
-  else if (d === 'past') orders = await db.listOrders({ from: addDays(t, -60), to: addDays(t, -1), newestFirst: true });
+  if (d === 'no') orders = await db.listOrders({ unpaidOnly: true, limit: 1000 });
+  else if (range) orders = await db.listOrders({ from: range[1], to: range[2], newestFirst: range[2] < t, limit: 2000 });
   else {
-    const date = d === 'today' ? t : d === 'tomorrow' ? addDays(t, 1) : d;
+    const date = day || (d === 'tomorrow' ? addDays(t, 1) : t);
     orders = await db.listOrders({ from: date, to: date });
   }
-  const multiDay = ['upcoming', 'no', 'past'].includes(d);
+  const multiDay = d === 'no' || !!range;
   const counts = Object.fromEntries(STATUS_ORDER.map((s) => [s, orders.filter((o) => o.status === s).length]));
   const status = query.s || '';
-  const custom = !['today', 'tomorrow', 'upcoming', 'no', 'past'].includes(d) && d !== holiday?.date;
 
   const datePill = (key, label) => html`<button class="pill ${d === key ? 'on' : ''}" data-d="${key}">${label}</button>`;
   el.innerHTML = html`
     <header class="top" style="flex-direction: column; align-items: stretch; gap: 12px">
       <h1>Đơn hàng</h1>
       <label class="search">${raw(ICON.search)}<input type="search" id="q" placeholder="Tìm tên, SĐT, mã đơn…" aria-label="Tìm đơn" value="${query.q || ''}"></label>
-      <div class="pills">
+      <div class="pills when">
+        ${d === 'no' ? datePill('no', 'Đơn còn nợ') : ''}
         ${datePill('today', 'Hôm nay')}
         ${datePill('tomorrow', 'Ngày mai')}
-        ${holiday && holiday.daysLeft > 1 ? datePill(holiday.date, `Lễ ${ddmm(holiday.date)}`) : ''}
-        ${datePill('upcoming', 'Sắp tới')}
-        ${datePill('no', 'Chưa trả tiền')}
-        ${datePill('past', 'Đã qua')}
-        <label class="pill ${custom ? 'on' : ''}">${custom ? dateShort(d) : 'Chọn ngày'}<input type="date" id="pick-date" aria-label="Chọn ngày giao" value="${custom ? d : ''}"></label>
+        <label class="pill ${day ? 'on' : ''}">${day ? dateShort(day) : 'Chọn ngày'}<input type="date" id="pick-date" aria-label="Chọn ngày giao" value="${day || ''}"></label>
+        <button class="pill ${range ? 'on' : ''}" id="pick-range">${range ? rangeLabel(range[1], range[2]) : 'Chọn kỳ'}</button>
       </div>
       <div class="pills" id="status-pills">
         <button class="pill ${!status ? 'on' : ''}" data-s="">Tất cả ${orders.length}</button>
@@ -80,7 +128,8 @@ export async function list({ el, query }) {
       : html`<div class="card empty">Không có đơn nào.<br><a class="btn btn-outline" href="#/don/moi">+ Tạo đơn</a></div>`.s;
   };
   const shown = () => (status ? orders.filter((o) => o.status === status) : orders);
-  const drawDefault = () => draw(d === 'past' ? shown() : sortOrders(shown()), multiDay);
+  // Kỳ đã qua: đơn mới nhất lên đầu. Còn lại theo giờ giao.
+  const drawDefault = () => draw(range && range[2] < t ? shown() : sortOrders(shown()), multiDay);
 
   async function search(q) {
     if (!q.trim()) { drawDefault(); return; }
@@ -95,6 +144,7 @@ export async function list({ el, query }) {
   el.querySelectorAll('[data-d]').forEach((b) => { b.onclick = () => setQuery({ d: b.dataset.d, s: '', q: '' }); });
   el.querySelectorAll('[data-s]').forEach((b) => { b.onclick = () => setQuery({ s: b.dataset.s }); });
   el.querySelector('#pick-date').addEventListener('change', (e) => { if (e.target.value) setQuery({ d: e.target.value, s: '' }); });
+  el.querySelector('#pick-range').onclick = () => pickRange(range);
   if (query.q) await search(query.q); else drawDefault();
 }
 

@@ -5,6 +5,7 @@ import { readFile, mkdir } from 'node:fs/promises';
 import { extname, join, normalize } from 'node:path';
 import { createRequire } from 'node:module';
 import assert from 'node:assert/strict';
+import { addDays, ddmm, today } from '../web/js/util.js';
 
 const require = createRequire(import.meta.url);
 const { chromium } = require('playwright');
@@ -77,7 +78,7 @@ try {
     assert.equal(await page.locator('dialog [data-pid]:not(.hidden)').count(), 1);
     await page.locator('#pq').press('Enter');
     await page.locator('#items .row', { hasText: 'Bó cẩm chướng hồng' }).waitFor();
-    assert.equal(await page.locator('dialog [data-pid]').count(), 0, 'hộp chọn sản phẩm đã đóng');
+    await page.locator('dialog [data-pid]').first().waitFor({ state: 'detached', timeout: 3000 });  // hộp chọn đã đóng
     await page.locator('[data-inc="0"]').click();
     await page.locator('textarea[name=card]').fill('Chúc em luôn vui!');
     await page.locator('[data-pay=chuyen_khoan]').click();
@@ -128,7 +129,24 @@ try {
     await page.goto(`${admin}#/don`);
     await page.getByRole('heading', { name: 'Đơn hàng' }).waitFor();
     await shot('04-don-hang');
-    await page.locator('[data-d=upcoming]').click();
+    // Chọn kỳ có sẵn.
+    await page.locator('#pick-range').click();
+    await page.locator('dialog [data-from]', { hasText: '7 ngày tới' }).click();
+    await page.locator('#pick-range.on', { hasText: '–' }).waitFor();
+    assert.ok(await page.locator('.order-card').count() >= 4, 'đơn hôm nay và các ngày tới');
+    // Tự chọn kỳ (nhập ngược thứ tự vẫn hiểu đúng), kỳ đã qua thì đơn mới nhất lên đầu.
+    const t = today();
+    await page.locator('#pick-range').click();
+    await page.locator('dialog input[name=from]').fill(addDays(t, -1));
+    await page.locator('dialog input[name=to]').fill(addDays(t, -7));
+    await page.getByRole('button', { name: 'Xem đơn' }).click();
+    await page.locator('#pick-range.on', { hasText: `${ddmm(addDays(t, -7))} – ${ddmm(addDays(t, -1))}` }).waitFor();
+    assert.equal(await page.locator('.order-card').count(), 2);
+    assert.match(await page.locator('.order-card .strong').first().textContent(), /Hôm qua/);
+    await shot('04b-don-theo-ky');
+    // Từ Tổng quan bấm "Khách còn nợ".
+    await page.goto(`${admin}#/don?d=no`);
+    await page.locator('.pill.on', { hasText: 'Đơn còn nợ' }).waitFor();
     await page.locator('#q').fill('Lan');
     await page.waitForTimeout(400);
     assert.ok(await page.locator('.order-card').count() >= 2);
@@ -233,7 +251,9 @@ try {
 
     await page.locator('#side a[href="#/don"]').click();
     await page.getByRole('heading', { name: 'Đơn hàng' }).waitFor();
-    await page.locator('[data-d=upcoming]').click();
+    await page.locator('#pick-range').click();
+    await page.locator('dialog [data-from]', { hasText: '7 ngày tới' }).click();
+    await page.locator('#pick-range.on', { hasText: '–' }).waitFor();
     await page.locator('#order-list > .order-card').first().waitFor();
     const cardLefts = await page.locator('#order-list > .order-card').evaluateAll((els) => new Set(els.map((e) => Math.round(e.getBoundingClientRect().left))).size);
     assert.ok(cardLefts >= 2, 'đơn hàng xếp nhiều cột');
