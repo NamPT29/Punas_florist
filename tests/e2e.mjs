@@ -27,7 +27,10 @@ const base = `http://localhost:${server.address().port}/`;  // trang khách (tra
 const admin = `${base}quan-ly/`;  // trang quản lý
 
 const browser = await chromium.launch(process.env.CHROMIUM ? { executablePath: process.env.CHROMIUM } : {});
-const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true, locale: 'vi-VN' });
+// Tắt service worker: nếu không, file tải qua service worker sẽ bỏ qua việc thay config.js bên dưới.
+const ctx = await browser.newContext({
+  viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true, locale: 'vi-VN', serviceWorkers: 'block',
+});
 await ctx.route(/fonts\.(googleapis|gstatic)\.com/, (r) => r.abort());
 // Luôn chạy bản dùng thử (dữ liệu mẫu), kể cả khi config.js đã trỏ tới Supabase thật.
 await ctx.route('**/js/config.js', (r) => r.fulfill({
