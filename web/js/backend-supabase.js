@@ -3,9 +3,11 @@ const ORDER_SELECT = '*, customer:customers(id,name,phone), items:order_items(id
 const TABLES = ['settings', 'staff', 'materials', 'products', 'product_components', 'customers',
   'orders', 'order_items', 'stock_moves', 'expenses'];
 
-export async function createSupabaseBackend(url, key) {
-  const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/+esm');
-  const sb = createClient(url, key, { auth: { persistSession: true, autoRefreshToken: true } });
+/** createClient, clientOptions: chỉ dùng cho kiểm thử (tests/supabase-it) để chạy với PostgREST trên máy. */
+export async function createSupabaseBackend(url, key, { createClient, clientOptions = {} } = {}) {
+  const create = createClient
+    ?? (await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/+esm')).createClient;
+  const sb = create(url, key, { auth: { persistSession: true, autoRefreshToken: true }, ...clientOptions });
 
   const run = async (q) => {
     const { data, error } = await q;

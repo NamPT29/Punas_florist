@@ -111,4 +111,5 @@ Mở **trang quản lý** (`…/quan-ly/`) bằng **Safari** → nút **Chia s�
   - `npm test`: logic tính toán và bản dùng thử.
   - `npm run test:sql`: chạy `schema.sql` trên PostgreSQL tạm, kiểm tra phân quyền, trừ/hoàn kho, giá lễ, công nợ. Cần PostgreSQL 15 trở lên.
   - `npm run test:e2e`: bấm thử toàn bộ giao diện trên trình duyệt cỡ iPhone. Cần Playwright.
+  - `npm run test:supabase`: chạy đúng code kết nối Supabase (`backend-supabase.js`) với thư viện Supabase chính thức, PostgREST và PostgreSQL thật. Script tự tải PostgREST và @supabase/supabase-js ở lần đầu.
   - `npm run lint`
