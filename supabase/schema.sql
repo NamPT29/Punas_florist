@@ -37,6 +37,8 @@ insert into settings (id) values (1) on conflict do nothing;
 alter table settings add column if not exists zalo text not null default '';
 alter table settings add column if not exists intro text not null default '';
 alter table settings add column if not exists open_hours text not null default '';
+alter table settings add column if not exists slogan text not null default '';
+alter table settings add column if not exists cover_url text;
 
 -- ---------- Kho: hoa và phụ liệu ----------
 create table if not exists materials (
@@ -428,7 +430,8 @@ create or replace function public_catalog() returns jsonb
 language sql stable security definer set search_path = public as $$
   select jsonb_build_object(
     'shop', (select jsonb_build_object('shop_name', shop_name, 'phone', phone, 'zalo', zalo, 'address', address,
-                                       'intro', intro, 'open_hours', open_hours, 'holidays', holidays)
+                                       'intro', intro, 'open_hours', open_hours, 'holidays', holidays,
+                                       'slogan', slogan, 'cover_url', cover_url)
              from settings where id = 1),
     'products', coalesce((select jsonb_agg(jsonb_build_object(
                   'id', id, 'name', name, 'description', description, 'categories', categories,

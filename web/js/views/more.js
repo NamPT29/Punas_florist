@@ -1,6 +1,6 @@
 // Đăng nhập, menu Thêm, Cài đặt shop, sao lưu.
 import { app, refresh, reloadUser } from '../app.js';
-import { html, raw, ICON, num, parseMoney, bindMoneyInputs, toast, errMsg, download, today, initials, ddmm } from '../util.js';
+import { html, raw, ICON, num, parseMoney, bindMoneyInputs, toast, errMsg, download, today, initials, ddmm, shrinkImage } from '../util.js';
 
 export async function login({ el }) {
   const noRole = app.user && !app.user.role;
@@ -151,6 +151,17 @@ export async function settings({ el }) {
       </section>
       <section class="card stack">
         <h2 style="margin: 0">Trang cho khách</h2>
+        <div class="field">Ảnh bìa (ảnh lớn đầu trang)
+          <div id="cover-box" style="aspect-ratio: 16 / 9; border-radius: 14px; overflow: hidden; background: var(--rose-soft); color: var(--rose-ink); display: flex; align-items: center; justify-content: center; font-weight: 500">
+            ${s.cover_url ? html`<img src="${s.cover_url}" alt="Ảnh bìa" style="width: 100%; height: 100%; object-fit: cover">` : 'Chưa có ảnh bìa'}
+          </div>
+          <div class="btns">
+            <label class="btn btn-sm" style="position: relative">Chọn ảnh<input type="file" accept="image/*" id="cover" style="position: absolute; inset: 0; opacity: 0"></label>
+            <button type="button" class="btn btn-sm" id="cover-del">Bỏ ảnh</button>
+          </div>
+          <span class="muted" style="font-weight: 400">Nên dùng ảnh ngang, rõ nét, chụp hoa thật của shop. Chọn xong bấm “Lưu cài đặt”.</span>
+        </div>
+        <label class="field">Khẩu hiệu (chữ lớn trên ảnh bìa)<input name="slogan" value="${s.slogan || ''}" placeholder="VD: Hoa tươi cho mọi khoảnh khắc"></label>
         <label class="field">Số Zalo nhận đặt hoa (để trống = dùng SĐT shop)<input name="zalo" type="tel" value="${s.zalo || ''}"></label>
         <label class="field">Giờ mở cửa<input name="open_hours" value="${s.open_hours || ''}" placeholder="VD: 7:00 – 21:00 hằng ngày"></label>
         <label class="field">Lời giới thiệu<textarea name="intro" rows="3" placeholder="VD: Hoa tươi mỗi ngày từ Đà Lạt, giao nhanh nội thành.">${s.intro || ''}</textarea></label>
@@ -166,7 +177,25 @@ export async function settings({ el }) {
     </form>`.s;
   const f = el.querySelector('#f');
   bindMoneyInputs(el);
-  if (!isOwner) f.querySelectorAll('input, textarea').forEach((i) => { i.disabled = true; });
+  if (!isOwner) f.querySelectorAll('input, textarea, button').forEach((i) => { i.disabled = true; });
+  let coverUrl = s.cover_url || null;
+  const showCover = () => {
+    el.querySelector('#cover-box').innerHTML = coverUrl
+      ? html`<img src="${coverUrl}" alt="Ảnh bìa" style="width: 100%; height: 100%; object-fit: cover">`.s : 'Chưa có ảnh bìa';
+  };
+  el.querySelector('#cover').addEventListener('change', async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    el.querySelector('#cover-box').textContent = 'Đang tải ảnh…';
+    try {
+      coverUrl = await app.db.uploadPhoto(await shrinkImage(file, app.db.mode === 'demo' ? 1280 : 2000, 0.82), 'cover');
+      toast('Đã tải ảnh, bấm “Lưu cài đặt” để dùng');
+    } catch (err) {
+      toast(errMsg(err), 'error');
+    }
+    showCover();
+  });
+  el.querySelector('#cover-del').onclick = () => { coverUrl = null; showCover(); };
   f.addEventListener('submit', async (e) => {
     e.preventDefault();
     try {
@@ -175,6 +204,8 @@ export async function settings({ el }) {
         phone: f.elements.phone.value.trim(),
         address: f.elements.address.value.trim(),
         zalo: f.elements.zalo.value.trim(),
+        slogan: f.elements.slogan.value.trim(),
+        cover_url: coverUrl,
         open_hours: f.elements.open_hours.value.trim(),
         intro: f.elements.intro.value.trim(),
         default_ship_fee: parseMoney(f.elements.ship.value),

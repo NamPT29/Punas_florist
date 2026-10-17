@@ -157,6 +157,9 @@ try {
     await shot('09-them');
     await page.goto(`${base}#/cai-dat`);
     await page.locator('input[name=holidays]').fill('14/2, 8/3, 20/10');
+    await page.locator('#cover').setInputFiles(new URL('./fixtures/cover-test.jpg', import.meta.url).pathname);
+    await toastSays('Đã tải ảnh');
+    await page.locator('input[name=slogan]').fill('Hoa tươi mỗi ngày');
     await page.getByRole('button', { name: 'Lưu cài đặt' }).click();
     await toastSays('Đã lưu cài đặt');
   });
@@ -169,6 +172,8 @@ try {
     await toastSays('Đã lưu sản phẩm');
     await page.goto(`${base}shop/`);
     await page.getByRole('heading', { name: 'Mẫu hoa' }).waitFor();
+    await page.locator('.hero.has-photo .hero-bg').waitFor();
+    assert.equal((await page.locator('.hero h1').textContent()).trim(), 'Hoa tươi mỗi ngày', 'khẩu hiệu trên ảnh bìa');
     const all = await page.locator('.p-card').count();
     assert.ok(all >= 3);
     assert.equal(await page.getByText(/giá vốn|tồn kho/i).count(), 0);
@@ -227,7 +232,8 @@ try {
     await page.goto(`${base}shop/`);
     await page.locator('.p-card').first().waitFor();
     assert.equal(await page.locator('.dock').isVisible(), false, 'laptop: không cần thanh nút ở đáy');
-    assert.ok(await page.locator('.head-cta').isVisible(), 'laptop: nút Zalo/Gọi trên thanh đầu trang');
+    assert.ok(await page.locator('.topbar .contacts').isVisible(), 'laptop: liên hệ trên thanh đen');
+    assert.ok(await page.locator('.catnav').isVisible(), 'laptop: thanh danh mục');
     await shot('26-laptop-trang-khach');
     await page.locator('.p-card').first().click();
     await page.locator('dialog.sheet.wide .detail-price').waitFor();

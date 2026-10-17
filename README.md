@@ -89,6 +89,7 @@ Mở địa chỉ trên bằng **Safari** → nút **Chia sẻ** → **Thêm và
 - Địa chỉ: thêm `/shop/` vào sau link app, ví dụ `https://punas-florist.pages.dev/shop/`. Trong app, vào **Thêm → Trang cho khách xem hoa** để mở hoặc chia sẻ link.
 - Trang lấy dữ liệu từ app quản lý. Sản phẩm nào **Đang bán** thì hiện, bỏ chọn thì ẩn. Sửa giá, ảnh hay mô tả xong là trang tự cập nhật.
 - Vào **Thêm → Thông tin shop** để điền **số Zalo**, **giờ mở cửa** và **lời giới thiệu**. Mỗi sản phẩm có ô **Mô tả cho khách**.
+- Cũng trong đó, tải **ảnh bìa** (ảnh lớn phủ kín đầu trang) và điền **khẩu hiệu** (chữ lớn trên ảnh). Nên dùng ảnh ngang, rõ nét, chụp hoa thật của shop. Chưa có ảnh thì đầu trang dùng nền hoa văn tối màu.
 - Zalo không cho điền sẵn tin nhắn qua link. Vì vậy khi khách bấm "Đặt qua Zalo", tên mẫu hoa và giá được chép sẵn để khách dán vào tin nhắn.
 - Muốn đổi dòng tiêu đề hiện khi chia sẻ link lên Facebook hay Zalo, sửa thẻ `og:title` và `og:description` trong `web/shop/index.html`.
 - Nếu bạn đã chạy `schema.sql` bản cũ, hãy chạy lại bản mới trong SQL Editor để có trang khách. Chạy lại an toàn, không mất dữ liệu.

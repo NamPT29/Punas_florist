@@ -13,7 +13,7 @@ function seed() {
     seq: 100,
     settings: { id: 1, shop_name: 'Tiệm hoa (dùng thử)', phone: '0900000000', zalo: '', address: '12 Đường Hoa, Q.3, TP.HCM',
       intro: 'Hoa tươi mỗi ngày từ Đà Lạt. Nhận bó hoa, giỏ hoa, kệ khai trương, giao nhanh nội thành.',
-      open_hours: '7:00 – 21:00 hằng ngày', default_ship_fee: 30000,
+      open_hours: '7:00 – 21:00 hằng ngày', slogan: 'Hoa tươi cho mọi khoảnh khắc', cover_url: null, default_ship_fee: 30000,
       holidays: ['02-14', '03-08', '10-20', '11-20', '12-24'] },
     materials: [], products: [], customers: [], orders: [], stock_moves: [], expenses: [],
   };
@@ -185,9 +185,10 @@ export function createDemoBackend(storage = globalThis.localStorage) {
     },
 
     async publicCatalog() {
-      const { shop_name, phone, zalo, address, intro, open_hours, holidays } = s.settings;
+      const { shop_name, phone, zalo, address, intro, open_hours, holidays, slogan, cover_url } = s.settings;
       return clone({
-        shop: { shop_name, phone, zalo: zalo || '', address, intro: intro || '', open_hours: open_hours || '', holidays },
+        shop: { shop_name, phone, zalo: zalo || '', address, intro: intro || '', open_hours: open_hours || '', holidays,
+          slogan: slogan || '', cover_url: cover_url || null },
         products: s.products.filter((p) => p.active).sort((a, b) => a.name.localeCompare(b.name, 'vi'))
           .map(({ id: pid, name, description, categories, price, holiday_price, photo_url }) =>
             ({ id: pid, name, description: description || '', categories, price, holiday_price, photo_url })),

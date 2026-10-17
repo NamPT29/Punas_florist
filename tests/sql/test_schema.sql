@@ -147,6 +147,7 @@ set role anon;
 select pg_temp.eq(jsonb_array_length(public_catalog()->'products'), 1, 'chỉ sản phẩm đang bán');
 select pg_temp.eq(public_catalog()->'products'->0->>'description', 'Hồng Đà Lạt, baby trắng', 'mô tả');
 select pg_temp.eq(public_catalog()->'shop'->>'shop_name', 'Tiệm Hoa Mộc', 'tên shop');
+select pg_temp.eq(public_catalog()->'shop' ? 'cover_url' and public_catalog()->'shop' ? 'slogan', true, 'ảnh bìa và khẩu hiệu');
 select pg_temp.eq(public_catalog()::text ~ '(cost|components|stock|min_stock)', false, 'không lộ dữ liệu nội bộ');
 select pg_temp.expect_error('select * from products', '42501');
 reset role;
