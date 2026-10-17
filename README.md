@@ -23,7 +23,7 @@ Giao diện tự đổi theo màn hình:
 - **Khách hàng:** lịch sử đơn, tổng đã mua, công nợ, sinh nhật, ghi chú sở thích.
 - **Thu chi, báo cáo tháng:** doanh thu theo ngày, sản phẩm bán chạy, chi phí theo loại, lãi, hoa hư hỏng, xuất Excel (CSV).
 - **Sao lưu:** tải toàn bộ dữ liệu về máy (JSON).
-- **Trang cho khách** (`/shop/`): khách xem mẫu hoa, giá, giá dịp lễ, lọc theo dịp, đặt qua Zalo hoặc gọi điện. Không cần đăng nhập, không hiện giá vốn, kho hay công thức.
+- **Trang cho khách** (trang chính của tên miền): khách xem mẫu hoa, giá, giá dịp lễ, lọc theo dịp, đặt qua Zalo hoặc gọi điện. Không cần đăng nhập, không hiện giá vốn, kho hay công thức.
 
 ## Cấu trúc
 
@@ -31,7 +31,8 @@ Giao diện tự đổi theo màn hình:
 web/                 Giao diện (HTML/CSS/JS thuần, không cần build)
   js/config.js       ← điền thông tin Supabase ở đây
   js/views/          Các màn hình quản lý
-  shop/              Trang cho khách xem hoa
+  index.html         Trang cho khách (trang chính)
+  quan-ly/           Trang quản lý (đơn, kho, khách, báo cáo…)
 supabase/schema.sql  Cơ sở dữ liệu, phân quyền, nghiệp vụ kho/đơn
 tests/               Kiểm thử (logic, SQL, giao diện)
 ```
@@ -78,20 +79,22 @@ Khóa này được phép công khai, dữ liệu được bảo vệ bằng đ�
 ### 6. Đưa app lên mạng bằng Cloudflare Pages (miễn phí)
 1. Đăng ký https://dash.cloudflare.com, vào **Workers & Pages → Create → Pages → Connect to Git**, chọn repo `Punas_florist`.
 2. Framework preset: **None**. Build command: để trống. **Build output directory: `web`**.
-3. Bấm **Deploy**. Bạn sẽ có địa chỉ dạng `https://punas-florist.pages.dev`.
+3. Bấm **Deploy**. Bạn sẽ có địa chỉ dạng `https://punas-florist.pages.dev`:
+   - `https://punas-florist.pages.dev`: **trang cho khách** (trang chính, gửi link này cho khách).
+   - `https://punas-florist.pages.dev/quan-ly/`: **trang quản lý** của shop (cần đăng nhập).
 
 Từ đó mỗi lần push code lên GitHub, Cloudflare sẽ tự cập nhật app.
 
 ### 7. Cài lên iPhone
-Mở địa chỉ trên bằng **Safari** → nút **Chia sẻ** → **Thêm vào MH chính**. Đăng nhập một lần là dùng như app thường. Điện thoại Android, iPad và máy tính ở quầy cũng dùng được, chung dữ liệu.
+Mở **trang quản lý** (`…/quan-ly/`) bằng **Safari** → nút **Chia sẻ** → **Thêm vào MH chính**. Đăng nhập một lần là dùng như app thường. Điện thoại Android, iPad và máy tính ở quầy cũng dùng được, chung dữ liệu.
 
 ## Trang cho khách xem hoa
-- Địa chỉ: thêm `/shop/` vào sau link app, ví dụ `https://punas-florist.pages.dev/shop/`. Trong app, vào **Thêm → Trang cho khách xem hoa** để mở hoặc chia sẻ link.
+- Địa chỉ: chính là tên miền, ví dụ `https://punas-florist.pages.dev`. Trong app quản lý, bấm **Trang khách** ở Tổng quan, hoặc vào **Thêm → Trang cho khách xem hoa** để mở hay chia sẻ link. Link cũ có `/shop/` vẫn tự chuyển về trang chính.
 - Trang lấy dữ liệu từ app quản lý. Sản phẩm nào **Đang bán** thì hiện, bỏ chọn thì ẩn. Sửa giá, ảnh hay mô tả xong là trang tự cập nhật.
 - Vào **Thêm → Thông tin shop** để điền **số Zalo**, **giờ mở cửa** và **lời giới thiệu**. Mỗi sản phẩm có ô **Mô tả cho khách**.
 - Cũng trong đó, tải **ảnh bìa** (ảnh lớn phủ kín đầu trang) và điền **khẩu hiệu** (chữ lớn trên ảnh). Nên dùng ảnh ngang, rõ nét, chụp hoa thật của shop. Chưa có ảnh thì đầu trang dùng nền hoa văn tối màu.
 - Zalo không cho điền sẵn tin nhắn qua link. Vì vậy khi khách bấm "Đặt qua Zalo", tên mẫu hoa và giá được chép sẵn để khách dán vào tin nhắn.
-- Muốn đổi dòng tiêu đề hiện khi chia sẻ link lên Facebook hay Zalo, sửa thẻ `og:title` và `og:description` trong `web/shop/index.html`.
+- Muốn đổi dòng tiêu đề hiện khi chia sẻ link lên Facebook hay Zalo, sửa thẻ `og:title` và `og:description` trong `web/index.html`.
 - Nếu bạn đã chạy `schema.sql` bản cũ, hãy chạy lại bản mới trong SQL Editor để có trang khách. Chạy lại an toàn, không mất dữ liệu.
 
 ## Lưu ý khi dùng gói miễn phí
@@ -100,8 +103,8 @@ Mở địa chỉ trên bằng **Safari** → nút **Chia sẻ** → **Thêm và
 - Gói miễn phí đủ cho shop nhỏ dùng nhiều năm (khoảng 500 MB dữ liệu và 1 GB ảnh).
 
 ## Dành cho người sửa code
-- Chạy thử trên máy: `npm start` rồi mở http://localhost:8080. Không mở thẳng file `index.html` được, vì trình duyệt chặn module JS khi mở file trực tiếp.
-- Khi sửa giao diện, đổi `VERSION` trong `web/sw.js` để iPhone tải bản mới.
+- Chạy thử trên máy: `npm start` rồi mở http://localhost:8080 (trang khách) và http://localhost:8080/quan-ly/ (trang quản lý). Không mở thẳng file `index.html` được, vì trình duyệt chặn module JS khi mở file trực tiếp.
+- Khi sửa giao diện quản lý, đổi `VERSION` trong `web/quan-ly/sw.js` để iPhone tải bản mới.
 - Kiểm thử:
   - `npm test`: logic tính toán và bản dùng thử.
   - `npm run test:sql`: chạy `schema.sql` trên PostgreSQL tạm, kiểm tra phân quyền, trừ/hoàn kho, giá lễ, công nợ. Cần PostgreSQL 15 trở lên.

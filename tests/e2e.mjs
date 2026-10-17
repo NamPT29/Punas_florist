@@ -23,7 +23,8 @@ const server = createServer(async (req, res) => {
     res.writeHead(404).end();
   }
 }).listen(0);
-const base = `http://localhost:${server.address().port}/`;
+const base = `http://localhost:${server.address().port}/`;  // trang khách (trang chính)
+const admin = `${base}quan-ly/`;  // trang quản lý
 
 const browser = await chromium.launch(process.env.CHROMIUM ? { executablePath: process.env.CHROMIUM } : {});
 const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true, locale: 'vi-VN' });
@@ -40,11 +41,11 @@ const step = async (name, fn) => { await fn(); console.log(`✓ ${name}`); };
 
 try {
   await step('Tổng quan', async () => {
-    await page.goto(base);
+    await page.goto(admin);
     await page.getByRole('heading', { name: 'Tổng quan' }).waitFor();
     assert.equal(await page.locator('#side').isVisible(), false, 'điện thoại: không có menu trái');
     assert.ok(await page.locator('#tabs').isVisible(), 'điện thoại: có thanh menu dưới');
-    assert.ok(await page.locator('header a[href="shop/"]', { hasText: 'Trang khách' }).isVisible(), 'nút mở trang khách trên Tổng quan');
+    assert.ok(await page.locator('header a[href="../"]', { hasText: 'Trang khách' }).isVisible(), 'nút mở trang khách trên Tổng quan');
     assert.equal(await page.locator('.list a.item[href^="#/don/"]').count(), 3);
     await page.getByText('Cảnh báo kho').waitFor();
     await shot('01-tong-quan');
@@ -83,7 +84,7 @@ try {
   });
 
   await step('Bán tại quầy', async () => {
-    await page.goto(`${base}#/don/moi`);
+    await page.goto(`${admin}#/don/moi`);
     await page.locator('input[name=phone]').fill('0977111222');
     await page.locator('input[name=name]').fill('Khách lẻ');
     await page.locator('[data-pickup="1"]').click();
@@ -98,7 +99,7 @@ try {
   });
 
   await step('Danh sách đơn, lọc và tìm', async () => {
-    await page.goto(`${base}#/don`);
+    await page.goto(`${admin}#/don`);
     await page.getByRole('heading', { name: 'Đơn hàng' }).waitFor();
     await shot('04-don-hang');
     await page.locator('[data-d=upcoming]').click();
@@ -124,7 +125,7 @@ try {
   });
 
   await step('Sản phẩm: sửa công thức', async () => {
-    await page.goto(`${base}#/san-pham`);
+    await page.goto(`${admin}#/san-pham`);
     await page.locator('a.item').first().click();
     await page.locator('#comps select').first().waitFor();
     await shot('06-san-pham');
@@ -134,7 +135,7 @@ try {
   });
 
   await step('Khách hàng', async () => {
-    await page.goto(`${base}#/khach`);
+    await page.goto(`${admin}#/khach`);
     await page.getByRole('heading', { name: 'Khách hàng' }).waitFor();
     await shot('07-khach-hang');
     await page.locator('a[href^="#/khach/"]').first().click();
@@ -142,20 +143,20 @@ try {
   });
 
   await step('Thu chi và báo cáo', async () => {
-    await page.goto(`${base}#/thu-chi`);
+    await page.goto(`${admin}#/thu-chi`);
     await page.locator('#add').click();
     await page.locator('dialog input[name=amount]').fill('150000');
     await page.locator('dialog [type=submit]').click();
     await toastSays('Đã thêm khoản chi');
-    await page.goto(`${base}#/bao-cao`);
+    await page.goto(`${admin}#/bao-cao`);
     await page.getByText('Doanh thu theo ngày').waitFor();
     await shot('08-bao-cao');
   });
 
   await step('Thêm và cài đặt', async () => {
-    await page.goto(`${base}#/them`);
+    await page.goto(`${admin}#/them`);
     await shot('09-them');
-    await page.goto(`${base}#/cai-dat`);
+    await page.goto(`${admin}#/cai-dat`);
     await page.locator('input[name=holidays]').fill('14/2, 8/3, 20/10');
     await page.locator('#cover').setInputFiles(new URL('./fixtures/cover-test.jpg', import.meta.url).pathname);
     await toastSays('Đã tải ảnh');
@@ -165,12 +166,13 @@ try {
   });
 
   await step('Trang cho khách: xem mẫu, lọc, mở chi tiết', async () => {
-    await page.goto(`${base}#/san-pham`);
+    await page.goto(`${admin}#/san-pham`);
     await page.locator('a.item', { hasText: 'Bó hồng đỏ' }).click();
     await page.locator('textarea[name=description]').fill('Bó hoa thử nghiệm cho trang khách');
     await page.locator('#save').click();
     await toastSays('Đã lưu sản phẩm');
-    await page.goto(`${base}shop/`);
+    await page.goto(`${base}shop/`);  // địa chỉ cũ: phải tự chuyển về trang chính
+    await page.waitForURL(base);
     await page.getByRole('heading', { name: 'Mẫu hoa' }).waitFor();
     await page.locator('.hero.has-photo .hero-bg').waitFor();
     assert.equal((await page.locator('.hero h1').textContent()).trim(), 'Hoa tươi mỗi ngày', 'khẩu hiệu trên ảnh bìa');
@@ -194,7 +196,7 @@ try {
 
   await step('Laptop 1366px: menu trái, chia cột, hộp thoại giữa màn hình', async () => {
     await page.setViewportSize({ width: 1366, height: 820 });
-    await page.goto(`${base}#/`);
+    await page.goto(`${admin}#/`);
     await page.locator('#side .side-link.on', { hasText: 'Tổng quan' }).waitFor();
     assert.equal(await page.locator('#tabs').isVisible(), false, 'laptop: ẩn thanh menu dưới');
     const tops = await page.locator('.stats > .card').evaluateAll((els) => els.map((e) => Math.round(e.getBoundingClientRect().top)));
@@ -229,7 +231,7 @@ try {
     await page.getByText('Doanh thu theo ngày').waitFor();
     await shot('25-laptop-bao-cao');
 
-    await page.goto(`${base}shop/`);
+    await page.goto(base);
     await page.locator('.p-card').first().waitFor();
     assert.equal(await page.locator('.dock').isVisible(), false, 'laptop: không cần thanh nút ở đáy');
     assert.ok(await page.locator('.topbar .contacts').isVisible(), 'laptop: liên hệ trên thanh đen');

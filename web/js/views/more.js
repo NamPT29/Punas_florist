@@ -46,7 +46,8 @@ export async function render({ el }) {
       <span class="avatar" style="width: 34px; height: 34px; border-radius: 10px; ${bg}">${raw(icon)}</span>
       <span class="grow" style="font-size: 15px; font-weight: 500">${label}</span><span class="chev">›</span>
     </a>`;
-  const shopUrl = new URL('shop/', `${location.origin}${location.pathname}`).href;
+  // Trang khách là trang chính của tên miền, ngay trên thư mục /quan-ly/.
+  const shopUrl = new URL('../', `${location.origin}${location.pathname}`).href;
   el.innerHTML = html`
     <header class="top" style="justify-content: flex-start">
       <div class="avatar" style="width: 48px; height: 48px; border-radius: 24px">${initials(user.name)}</div>

@@ -60,7 +60,7 @@ function renderSide(path) {
   const current = (on) => (on ? raw('aria-current="page"') : '');
   document.getElementById('side').innerHTML = html`
     <a class="side-brand" href="#/">
-      <img src="icons/icon.svg" alt="">
+      <img src="../icons/icon.svg" alt="">
       <span><b>${app.settings?.shop_name || 'Shop Hoa'}</b><small>Quản lý shop hoa</small></span>
     </a>
     <a class="btn btn-primary side-create" href="#/don/moi" ${current(path === '/don/moi')}>${raw(ICON.plus)}Tạo đơn</a>
@@ -68,7 +68,7 @@ function renderSide(path) {
       ${SIDE.map(([p, label, icon]) => html`<a class="side-link ${isOn(p) ? 'on' : ''}" href="#${p}" ${current(isOn(p))}>${raw(icon)}<span>${label}</span></a>`)}
     </nav>
     <div class="side-foot">
-      <a class="side-link" href="shop/" target="_blank" rel="noopener">${raw(ICON.share)}<span>Trang cho khách</span></a>
+      <a class="side-link" href="../" target="_blank" rel="noopener">${raw(ICON.share)}<span>Trang cho khách</span></a>
       <div class="side-user"><span class="avatar">${initials(app.user.name)}</span>
         <span><b>${app.user.name}</b><small>${app.user.role === 'owner' ? 'Chủ shop' : 'Nhân viên'}</small></span></div>
     </div>`.s;
