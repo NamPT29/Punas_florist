@@ -59,14 +59,22 @@ Vào **SQL Editor**, chạy lệnh dưới đây (thay email và tên):
 ```sql
 -- Chủ shop (được sửa cài đặt)
 insert into staff (user_id, name, role)
-select id, 'Tên chủ shop', 'owner' from auth.users where email = 'chu-shop@gmail.com';
+select id, 'Tên chủ shop', 'owner' from auth.users where email = 'chu-shop@gmail.com'
+on conflict (user_id) do update set name = excluded.name, role = excluded.role;
 
 -- Nhân viên
 insert into staff (user_id, name, role)
-select id, 'Tên nhân viên', 'staff' from auth.users where email = 'nhan-vien@gmail.com';
+select id, 'Tên nhân viên', 'staff' from auth.users where email = 'nhan-vien@gmail.com'
+on conflict (user_id) do update set name = excluded.name, role = excluded.role;
 ```
 
-Tài khoản không có trong bảng `staff` sẽ không xem được dữ liệu, kể cả khi đăng nhập được.
+Tài khoản không có trong bảng `staff` sẽ không xem được dữ liệu, kể cả khi đăng nhập được. Chạy lại lệnh nhiều lần vẫn an toàn (chỉ cập nhật tên và vai trò).
+
+Kiểm tra danh sách người được dùng app:
+
+```sql
+select u.email, s.name, s.role from staff s join auth.users u on u.id = s.user_id;
+```
 
 ### 5. Kết nối app với Supabase
 Vào **Project Settings → API** (hoặc **API Keys**), chép **Project URL** và khóa **anon / publishable** vào `web/js/config.js`:
