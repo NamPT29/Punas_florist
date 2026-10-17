@@ -72,7 +72,12 @@ try {
     await page.locator('[data-date]').nth(1).click();
     await page.locator('[data-slot="10–12h"]').click();
     await page.getByRole('button', { name: '+ Thêm sản phẩm' }).click();
-    await page.locator('dialog [data-pid]').first().click();
+    // Gõ không dấu vẫn ra gợi ý; Enter chọn mẫu đầu tiên.
+    await page.locator('#pq').fill('cam chuong');
+    assert.equal(await page.locator('dialog [data-pid]:not(.hidden)').count(), 1);
+    await page.locator('#pq').press('Enter');
+    await page.locator('#items .row', { hasText: 'Bó cẩm chướng hồng' }).waitFor();
+    assert.equal(await page.locator('dialog [data-pid]').count(), 0, 'hộp chọn sản phẩm đã đóng');
     await page.locator('[data-inc="0"]').click();
     await page.locator('textarea[name=card]').fill('Chúc em luôn vui!');
     await page.locator('[data-pay=chuyen_khoan]').click();
@@ -98,7 +103,20 @@ try {
     await page.locator('[data-pickup="1"]').click();
     await page.locator('input[name=handover]').check();
     await page.getByRole('button', { name: '+ Thêm sản phẩm' }).click();
-    await page.locator('#cname').fill('Bó tùy chọn tông trắng');
+    // Màn hình thấp: danh sách cuộn được và có nút lướt xuống.
+    await page.setViewportSize({ width: 390, height: 520 });
+    await page.locator('#pmore:not(.hidden)').waitFor();
+    await shot('03b-chon-san-pham');
+    await page.locator('#pmore').click();
+    await page.waitForFunction(() => document.querySelector('#plist').scrollTop > 0);
+    await page.setViewportSize({ width: 390, height: 844 });
+    // Tên bắt đầu bằng chữ đã gõ được xếp trước tên chỉ chứa chữ đó ở cuối.
+    await page.locator('#pq').fill('hong');
+    assert.deepEqual(await page.locator('dialog [data-pid]:not(.hidden) .title').allTextContents(), ['Bó hồng đỏ 20 bông', 'Bó cẩm chướng hồng']);
+    // Không có mẫu trùng tên thì thêm làm sản phẩm tùy chọn.
+    await page.locator('#pq').fill('Bó tùy chọn tông trắng');
+    await page.locator('#pcustom').click();
+    assert.equal(await page.locator('#cname').inputValue(), 'Bó tùy chọn tông trắng');
     await page.locator('#cprice').fill('300000');
     await page.locator('#cadd').click();
     await page.locator('[data-pay=tien_mat]').click();

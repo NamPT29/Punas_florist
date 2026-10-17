@@ -241,6 +241,17 @@ dialog.sheet::backdrop { background: rgba(43,35,38,.38); }
 .sheet-head { display: flex; align-items: center; justify-content: space-between; padding: 14px 12px 8px 20px; }
 .sheet-head h2 { font-size: 18px; font-family: var(--serif); font-weight: 600; }
 .sheet-body { padding: 4px 20px 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+/* Nội dung dài thì cả hộp cuộn, không bóp nhỏ (và cắt mất) danh sách bên trong. */
+.sheet-body > * { flex-shrink: 0; }
+.pick-wrap { position: relative; }
+.pick-list { max-height: min(52vh, 460px); overflow-y: auto; overscroll-behavior: contain; }
+.pick-more {
+  position: absolute; left: 50%; bottom: 10px; transform: translateX(-50%); min-height: 38px; padding: 0 16px;
+  border: 1px solid var(--rose-line); border-radius: 999px; background: var(--surface); color: var(--rose-ink);
+  font-size: 13px; font-weight: 600; white-space: nowrap; box-shadow: 0 6px 18px rgba(43,35,38,.14);
+}
+.custom-box summary { min-height: 40px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-weight: 700; cursor: pointer; }
+.custom-box summary .muted { font-weight: 400; }
 .sheet-foot { padding: 12px 20px calc(16px + var(--safe-b)); border-top: 1px solid var(--line); background: var(--surface); }
 
 /* ---------- Toast ---------- */

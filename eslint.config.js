@@ -10,7 +10,7 @@ export default [
         localStorage: 'readonly', globalThis: 'readonly', console: 'readonly', setTimeout: 'readonly', clearTimeout: 'readonly',
         URL: 'readonly', URLSearchParams: 'readonly', Blob: 'readonly', File: 'readonly', FileReader: 'readonly', Image: 'readonly',
         FormData: 'readonly', fetch: 'readonly', confirm: 'readonly', caches: 'readonly', self: 'readonly', Response: 'readonly',
-        Intl: 'readonly', process: 'readonly', IntersectionObserver: 'readonly',
+        Intl: 'readonly', process: 'readonly', IntersectionObserver: 'readonly', requestAnimationFrame: 'readonly',
       },
     },
     rules: {

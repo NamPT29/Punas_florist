@@ -88,6 +88,9 @@ export function timeOf(ts) {
 }
 
 // ---------- SĐT ----------
+/** Bỏ dấu tiếng Việt để tìm kiếm: "Hồng Đỏ" → "hong do". */
+export const fold = (s) => String(s ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[đĐ]/g, 'd').toLowerCase();
+
 export const phoneDigits = (s) => String(s ?? '').replace(/\D/g, '');
 export function phoneFmt(s) {
   const d = phoneDigits(s);

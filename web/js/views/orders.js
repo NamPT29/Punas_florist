@@ -2,7 +2,7 @@
 import { app, refresh, setQuery } from '../app.js';
 import {
   html, raw, ICON, money, num, today, addDays, ddmm, dateShort, dateLong, dateRelative, phoneDigits, phoneFmt,
-  parseMoney, bindMoneyInputs, STATUS, PAYMENT, statusChip, toast, errMsg, sheet, shrinkImage, itemsLabel,
+  parseMoney, bindMoneyInputs, STATUS, PAYMENT, statusChip, toast, errMsg, sheet, shrinkImage, fold, itemsLabel,
 } from '../util.js';
 import { nextHoliday, priceOf, sortOrders } from '../stats.js';
 
@@ -325,45 +325,117 @@ export async function create({ el, query }) {
 }
 
 function pickProduct(products, date, holidays, onPick) {
+  const catCount = new Map();
+  for (const c of products.flatMap((p) => p.categories || [])) catCount.set(c, (catCount.get(c) || 0) + 1);
+  const cats = [...catCount.keys()].sort((a, b) => catCount.get(b) - catCount.get(a) || a.localeCompare(b, 'vi'));
   const body = html`
-    <label class="search">${raw(ICON.search)}<input type="search" id="pq" placeholder="Tìm sản phẩm…" aria-label="Tìm sản phẩm"></label>
-    <div class="list" id="plist">
-      ${products.map((p) => html`
-        <button type="button" class="item" data-pid="${p.id}" data-name="${p.name.toLowerCase()}">
-          ${p.photo_url ? html`<img class="thumb" src="${p.photo_url}" alt="">` : html`<div class="thumb"></div>`}
-          <div class="grow"><div class="title">${p.name}</div><div class="muted">${p.categories?.join(' · ')}</div></div>
-          <b class="nowrap">${money(priceOf(p, date, holidays))}</b>
-        </button>`)}
-      ${products.length ? '' : html`<div class="empty">Chưa có sản phẩm. Thêm ở mục Thêm › Sản phẩm.</div>`}
+    <label class="search">${raw(ICON.search)}<input type="search" id="pq" placeholder="Gõ tên hoa, không cần dấu" aria-label="Tìm sản phẩm" autocomplete="off"></label>
+    ${cats.length > 1 && html`<div class="pills">
+      <button type="button" class="pill on" data-pcat="">Tất cả</button>
+      ${cats.map((c) => html`<button type="button" class="pill" data-pcat="${c}">${c}</button>`)}
+    </div>`}
+    <div class="muted small" id="pcount" aria-live="polite"></div>
+    <div class="pick-wrap" id="pwrap">
+      <div class="list pick-list" id="plist">
+        ${products.map((p) => html`
+          <button type="button" class="item" data-pid="${p.id}">
+            ${p.photo_url ? html`<img class="thumb" src="${p.photo_url}" alt="">` : html`<div class="thumb"></div>`}
+            <div class="grow"><div class="title">${p.name}</div><div class="muted">${p.categories?.join(' · ')}</div></div>
+            <b class="nowrap">${money(priceOf(p, date, holidays))}</b>
+          </button>`)}
+        ${products.length ? '' : html`<div class="empty">Chưa có sản phẩm. Thêm ở mục Sản phẩm.</div>`}
+      </div>
+      <button type="button" class="pick-more hidden" id="pmore">↓ Lướt xuống xem thêm</button>
     </div>
-    <div class="card stack">
-      <h2>Sản phẩm tùy chọn</h2>
-      <div class="muted">Bó theo yêu cầu, quà kèm, thiệp… (không trừ kho)</div>
-      <label class="field">Tên<input id="cname" placeholder="VD: Bó tùy chọn tông trắng"></label>
-      <label class="field">Giá<input id="cprice" data-money inputmode="numeric" placeholder="0"></label>
-      <button type="button" class="btn btn-outline" id="cadd">Thêm vào đơn</button>
-    </div>`;
+    <div class="card empty hidden" id="pnone"></div>
+    <details class="card custom-box" id="pbox">
+      <summary>+ Sản phẩm tùy chọn <span class="muted">(bó theo yêu cầu, quà kèm, thiệp…)</span></summary>
+      <div class="stack" style="margin-top: 10px">
+        <div class="muted">Không trừ kho.</div>
+        <label class="field">Tên<input id="cname" placeholder="VD: Bó tùy chọn tông trắng"></label>
+        <label class="field">Giá<input id="cprice" data-money inputmode="numeric" placeholder="0"></label>
+        <button type="button" class="btn btn-outline" id="cadd">Thêm vào đơn</button>
+      </div>
+    </details>`;
   sheet({
     title: 'Chọn sản phẩm', body,
     onMount(dlg, close) {
-      dlg.querySelector('#pq').addEventListener('input', (e) => {
-        const q = e.target.value.toLowerCase();
-        dlg.querySelectorAll('[data-pid]').forEach((b) => b.classList.toggle('hidden', !b.dataset.name.includes(q)));
+      const $ = (sel) => dlg.querySelector(sel);
+      const list = $('#plist');
+      const rows = [...dlg.querySelectorAll('[data-pid]')].map((el) => {
+        const p = products.find((x) => x.id === Number(el.dataset.pid));
+        return { el, p, name: fold(p.name), tags: fold((p.categories || []).join(' ')) };
       });
-      dlg.querySelectorAll('[data-pid]').forEach((b) => {
+      let cat = '';
+      const pick = (p) => { onPick({ product_id: p.id, name: p.name, price: null, qty: 1 }); close(); };
+      const updateMore = () => $('#pmore').classList.toggle('hidden', list.scrollHeight - list.scrollTop - list.clientHeight < 8);
+
+      // Gợi ý theo tên (không cần gõ dấu): tên có từ bắt đầu bằng chữ đã gõ lên đầu, khớp càng sớm trong tên càng lên trên.
+      function rank(name, q, words) {
+        if (!q) return [0, 0];
+        const at = name.indexOf(q);
+        if (at >= 0) return [at === 0 || name[at - 1] === ' ' ? 0 : 1, at];
+        return [words.every((w) => name.includes(w)) ? 2 : 3, 0];
+      }
+      function filter() {
+        const typed = $('#pq').value.trim();
+        const words = fold(typed).split(/\s+/).filter(Boolean);
+        const q = words.join(' ');
+        const shown = rows
+          .filter((r) => (!cat || r.p.categories?.includes(cat)) && words.every((w) => `${r.name} ${r.tags}`.includes(w)))
+          .map((r) => ({ r, k: rank(r.name, q, words) }))
+          .sort((a, b) => a.k[0] - b.k[0] || a.k[1] - b.k[1]);
+        rows.forEach((r) => r.el.classList.add('hidden'));
+        shown.forEach(({ r }) => { r.el.classList.remove('hidden'); list.appendChild(r.el); });
+        $('#pcount').textContent = rows.length ? `${shown.length} mẫu${typed || cat ? ' phù hợp' : ''}` : '';
+        $('#pwrap').classList.toggle('hidden', rows.length > 0 && shown.length === 0);
+        $('#pnone').classList.toggle('hidden', shown.length > 0 || !typed);
+        if (!shown.length && typed) {
+          $('#pnone').innerHTML = html`Không thấy mẫu “${typed}”.<br>
+            <button type="button" class="btn btn-outline btn-sm" id="pcustom" style="margin-top: 10px">+ Thêm “${typed}” với giá tự nhập</button>`.s;
+        }
+        list.scrollTop = 0;
+        updateMore();
+      }
+
+      $('#pq').addEventListener('input', filter);
+      $('#pq').addEventListener('keydown', (e) => {
+        if (e.key !== 'Enter') return;
+        e.preventDefault();
+        const first = list.querySelector('[data-pid]:not(.hidden)');
+        if (first) pick(products.find((x) => x.id === Number(first.dataset.pid)));
+      });
+      dlg.querySelectorAll('[data-pcat]').forEach((b) => {
         b.onclick = () => {
-          const p = products.find((x) => x.id === Number(b.dataset.pid));
-          onPick({ product_id: p.id, name: p.name, price: null, qty: 1 });
-          close();
+          cat = b.dataset.pcat;
+          dlg.querySelectorAll('[data-pcat]').forEach((x) => x.classList.toggle('on', x === b));
+          filter();
         };
       });
-      dlg.querySelector('#cadd').onclick = () => {
-        const name = dlg.querySelector('#cname').value.trim();
-        const price = parseMoney(dlg.querySelector('#cprice').value);
+      rows.forEach((r) => { r.el.onclick = () => pick(r.p); });
+      list.addEventListener('scroll', updateMore);
+      $('#pmore').onclick = () => list.scrollBy({ top: list.clientHeight * 0.8, behavior: 'smooth' });
+      $('#pnone').addEventListener('click', (e) => {
+        if (!e.target.closest('#pcustom')) return;
+        $('#pbox').open = true;
+        $('#cname').value = $('#pq').value.trim();
+        $('#cprice').focus();
+      });
+      $('#cname').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); $('#cprice').focus(); } });
+      $('#cprice').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); $('#cadd').click(); } });
+      $('#cadd').onclick = () => {
+        const name = $('#cname').value.trim();
+        const price = parseMoney($('#cprice').value);
         if (!name) return toast('Nhập tên sản phẩm', 'error');
         onPick({ product_id: null, name, price, qty: 1 });
         close();
       };
+      filter();
+      // Đợi hộp thoại mở xong mới đo được chiều cao danh sách; trên máy tính đặt sẵn con trỏ vào ô tìm.
+      requestAnimationFrame(() => {
+        updateMore();
+        if (window.matchMedia('(pointer: fine)').matches) $('#pq').focus();
+      });
     },
   });
 }
