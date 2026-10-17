@@ -35,6 +35,12 @@ fi
 export PGOPTIONS="-c client_min_messages=warning"
 PSQL=(psql -h "$TMP" -U postgres -d postgres -v ON_ERROR_STOP=1 -q)
 "${PSQL[@]}" -f tests/sql/supabase_stub.sql
+# Giống khi tắt "Automatically expose new tables" lúc tạo dự án Supabase: bảng mới không tự cấp quyền.
+"${PSQL[@]}" <<'SQL'
+alter default privileges in schema public revoke all on tables from anon, authenticated;
+alter default privileges in schema public revoke all on sequences from anon, authenticated;
+alter default privileges in schema public revoke execute on functions from anon, authenticated, public;
+SQL
 "${PSQL[@]}" -f supabase/schema.sql
 "${PSQL[@]}" <<'SQL'
 insert into auth.users values

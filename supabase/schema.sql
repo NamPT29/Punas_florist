@@ -196,6 +196,16 @@ revoke all on staff from anon;
 
 revoke all on customer_stats from anon;
 
+-- Quyền gọi qua API, cấp rõ ràng để chạy được cả khi tắt "Automatically expose new tables"
+-- lúc tạo dự án. Ai được xem/sửa dòng nào vẫn do các policy RLS ở trên quyết định.
+grant usage on schema public to anon, authenticated;
+grant select, insert, update, delete on materials, products, product_components, customers,
+  orders, order_items, stock_moves, expenses, staff to authenticated;
+grant select, update on settings to authenticated;
+grant select on customer_stats to authenticated;
+grant usage, select on all sequences in schema public to authenticated;
+grant execute on function is_staff(), is_owner() to authenticated;
+
 -- =====================================================================
 -- Nghiệp vụ (chạy trong 1 giao dịch, đảm bảo kho và tiền luôn khớp)
 -- =====================================================================
