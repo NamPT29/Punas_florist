@@ -44,6 +44,7 @@ try {
     await page.getByRole('heading', { name: 'Tổng quan' }).waitFor();
     assert.equal(await page.locator('#side').isVisible(), false, 'điện thoại: không có menu trái');
     assert.ok(await page.locator('#tabs').isVisible(), 'điện thoại: có thanh menu dưới');
+    assert.ok(await page.locator('header a[href="shop/"]', { hasText: 'Trang khách' }).isVisible(), 'nút mở trang khách trên Tổng quan');
     assert.equal(await page.locator('.list a.item[href^="#/don/"]').count(), 3);
     await page.getByText('Cảnh báo kho').waitFor();
     await shot('01-tong-quan');

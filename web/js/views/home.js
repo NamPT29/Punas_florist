@@ -22,6 +22,7 @@ export async function render({ el }) {
         <div class="eyebrow">${raw(ICON.logo)}<span>${settings?.shop_name || 'Shop Hoa'} · ${dateLong(t)}</span></div>
         <h1 style="margin-top: 2px">Tổng quan</h1>
       </div>
+      <a class="btn btn-sm btn-outline" href="shop/" target="_blank" rel="noopener" style="flex-shrink: 0; white-space: nowrap; align-self: flex-start">${raw(ICON.share)}Trang khách</a>
     </header>
     <div class="page">
       ${d.holiday && html`
