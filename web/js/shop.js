@@ -1,7 +1,7 @@
 // Trang cho khách: ảnh bìa lớn, mẫu hoa xếp theo bộ sưu tập (kiểu tạp chí), đặt qua Zalo hoặc gọi điện. Không cần đăng nhập.
 import { loadBackend } from './backend.js';
 import { html, raw, ICON, money, moneyShort, fold, toast, errMsg, phoneDigits, phoneFmt, today, ddmm, sheet } from './util.js';
-import { nextHoliday, priceOf } from './stats.js';
+import { nextHoliday, priceOf, holidayName, holidayProducts } from './stats.js';
 
 const FLOWER = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="9" r="2.2"/><path d="M12 6.8C11 3.5 13 3.5 12 6.8M14.2 9c3.3-1 3.3 1 0 0M9.8 9c-3.3-1-3.3 1 0 0M12 11.2c-1 3.3 1 3.3 0 0M12 13v8M12 17c2-2 4-2 5-1.5M12 19c-2-2-4-2-5-1.5"/></svg>';
 
@@ -32,7 +32,14 @@ const ARROW_L = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" str
 const ARROW_R = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>';
 const CHEVRON = '<svg class="occ-chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>';
 
-function render(root, { shop, products, groups = [] }) {
+// Lọc theo giá (giá đang áp dụng hôm nay).
+const PRICE = [
+  ['lt', 'Dưới 250k', (v) => v < 250000],
+  ['mid', '250k – 400k', (v) => v >= 250000 && v <= 400000],
+  ['gt', 'Trên 400k', (v) => v > 400000],
+];
+
+function render(root, { shop, products, groups = [], delivered = [] }) {
   const t = today();
   const phone = phoneDigits(shop.phone);
   const zalo = phoneDigits(shop.zalo) || phone;
@@ -44,7 +51,7 @@ function render(root, { shop, products, groups = [] }) {
   const catCount = new Map();
   for (const c of products.flatMap((p) => p.categories || [])) catCount.set(c, (catCount.get(c) || 0) + 1);
   const cats = [...catCount.keys()].sort((a, b) => catCount.get(b) - catCount.get(a) || a.localeCompare(b, 'vi'));
-  const st = { occ: '', q: '' };
+  const st = { occ: '', q: '', price: '' };
   const priceNow = (p) => priceOf(p, t, shop.holidays);
   document.title = `${shop.shop_name} · Mẫu hoa & bảng giá`;
 
@@ -58,15 +65,26 @@ function render(root, { shop, products, groups = [] }) {
   const rest = products.filter((p) => p.group_id == null || !groupIds.has(String(p.group_id)));
   if (colls.length && rest.length) colls.push({ key: 'bst-khac', name: 'Mẫu khác', items: byPrice(rest) });
   const grouped = colls.length > 0;
-  if (!grouped) colls = [{ key: 'bst-tat-ca', name: '', items: products }];
+  if (!grouped) colls = [{ key: 'bst-tat-ca', name: '', items: products, plain: true }];
   const groupOf = new Map(grouped ? colls.flatMap((c) => c.items.map((p) => [p.id, c.name])) : []);
+  const collCount = grouped ? colls.length : 0;
+
+  // Bộ sưu tập dịp lễ: trong 14 ngày trước ngày lễ, đưa các mẫu của dịp lên đầu kèm đếm ngược.
+  const holItems = holiday ? byPrice(holidayProducts(products, holiday.date)) : [];
+  const countdown = !holiday ? '' : holiday.daysLeft === 0 ? 'Hôm nay' : holiday.daysLeft === 1 ? 'Ngày mai' : `Còn ${holiday.daysLeft} ngày`;
+  if (holItems.length) {
+    colls.unshift({ key: 'bst-le', name: holidayName(holiday.date), nav: `Dịp ${ddmm(holiday.date)}`, items: holItems, hol: true });
+    if (!grouped) colls[1].name = 'Tất cả mẫu';
+  }
+  const showNav = grouped || holItems.length > 0;
+  const priceOpts = PRICE.filter(([, , ok]) => products.some((p) => ok(priceNow(p))));
 
   const note = (p) => (holiday && holiday.daysLeft > 0 && p.holiday_price != null && p.holiday_price !== p.price
     ? `Dịp ${ddmm(holiday.date)}: ${money(p.holiday_price)}` : '');
   const zaloBtn = (cls, label) => zaloUrl
     && html`<a class="btn ${cls}" href="${zaloUrl}" target="_blank" rel="noopener" data-zalo>${raw(ICON.chat)}${label}</a>`;
   const callBtn = (cls, label) => phone && html`<a class="btn ${cls}" href="tel:${phone}">${raw(ICON.phone)}${label}</a>`;
-  const summary = (n) => (grouped ? `${n} mẫu · ${colls.length} bộ sưu tập` : `${n} mẫu`);
+  const summary = (n) => (grouped ? `${n} mẫu · ${collCount} bộ sưu tập` : `${n} mẫu`);
 
   root.innerHTML = html`
     <div class="topbar"><div class="wrap">
@@ -95,7 +113,7 @@ function render(root, { shop, products, groups = [] }) {
     </header>
 
     <main class="wrap">
-      ${holiday && html`
+      ${holiday && !holItems.length && html`
         <div class="season">
           <div><b>${holiday.daysLeft === 0 ? `Hôm nay là ${ddmm(holiday.date)}` : `Đặt trước hoa ${ddmm(holiday.date)}`}</b>
             <span>${holiday.daysLeft === 0 ? 'Shop vẫn nhận đơn giao trong ngày.' : `Còn ${holiday.daysLeft} ngày. Đặt sớm để giữ mẫu và giờ giao.`}</span></div>
@@ -115,9 +133,23 @@ function render(root, { shop, products, groups = [] }) {
             ${products.length > 6 && html`<label class="search">${raw(ICON.search)}<input type="search" id="q" placeholder="Tìm mẫu hoa…" aria-label="Tìm mẫu hoa"></label>`}
           </div>`}
         </div>
-        ${grouped && html`<nav class="coll-nav" id="coll-nav" aria-label="Chọn bộ sưu tập"></nav>`}
+        ${priceOpts.length > 1 && html`<div class="price-filter" role="group" aria-label="Lọc theo giá">
+          <button type="button" class="on" data-price="" aria-pressed="true">Mọi giá</button>
+          ${priceOpts.map(([k, label]) => html`<button type="button" data-price="${k}" aria-pressed="false">${label}</button>`)}
+        </div>`}
+        ${showNav && html`<nav class="coll-nav" id="coll-nav" aria-label="Chọn bộ sưu tập"></nav>`}
         <div id="colls"></div>
       </section>
+
+      ${delivered.length > 0 && html`
+        <section class="delivered" aria-labelledby="dlv-title">
+          <div class="kicker">Khách đã nhận</div>
+          <h2 id="dlv-title">Hoa đã giao</h2>
+          <p class="catalog-sub">Ảnh chụp thật trước khi giao cho khách.</p>
+          <div class="dlv-row">
+            ${delivered.map((d, i) => html`<button type="button" class="dlv" data-dlv="${i}"><img src="${d.photo_url}" alt="${d.items || 'Bó hoa đã giao'}" loading="lazy"><span class="dlv-cap">${d.items}</span></button>`)}
+          </div>
+        </section>`}
 
       <section class="howto" aria-labelledby="howto-title">
         <h2 id="howto-title">Cách đặt hoa</h2>
@@ -185,23 +217,28 @@ function render(root, { shop, products, groups = [] }) {
 
   function draw() {
     const q = fold(st.q);
-    const match = (p) => (!st.occ || p.categories?.includes(st.occ)) && (!q || fold(`${p.name} ${p.description}`).includes(q));
+    const price = PRICE.find(([k]) => k === st.price);
+    const match = (p) => (!st.occ || p.categories?.includes(st.occ)) && (!price || price[2](priceNow(p)))
+      && (!q || fold(`${p.name} ${p.description}`).includes(q));
     const shown = colls.map((c) => ({ ...c, items: c.items.filter(match) })).filter((c) => c.items.length);
-    const n = shown.reduce((s, c) => s + c.items.length, 0);
-    root.querySelector('#cat-sub').textContent = st.occ || q ? `${st.occ ? `${st.occ} · ` : ''}${n} mẫu phù hợp` : summary(n);
+    // Mẫu dịp lễ cũng nằm trong bộ sưu tập của nó: không đếm hai lần.
+    const n = new Set(shown.filter((c) => !c.hol).flatMap((c) => c.items.map((p) => p.id))).size;
+    const filters = [st.occ, price?.[1]].filter(Boolean).join(' · ');
+    root.querySelector('#cat-sub').textContent = filters || q ? `${filters ? `${filters} · ` : ''}${n} mẫu phù hợp` : summary(n);
     body.innerHTML = shown.length ? shown.map((c) => html`
-      <section class="coll${c.name ? '' : ' plain'}" id="${c.key}" ${raw(c.name ? `aria-labelledby="${c.key}-t"` : 'aria-label="Mẫu hoa"')}>
-        ${c.name ? html`
+      <section class="coll${c.plain ? ' plain' : ''}${c.hol ? ' hol' : ''}" id="${c.key}" ${raw(c.name ? `aria-labelledby="${c.key}-t"` : 'aria-label="Mẫu hoa"')}>
+        ${c.name && html`
           <header class="coll-head">
+            ${c.hol && html`<span class="hol-badge">${countdown}</span>`}
             <h3 id="${c.key}-t">${c.name}</h3>
             <span class="coll-meta">${c.items.length} mẫu · từ ${moneyShort(Math.min(...c.items.map(priceNow)))}</span>
-            <span class="rail-btns" hidden>
+            ${c.hol && zaloBtn('btn-primary btn-sm hol-cta', holiday.daysLeft ? 'Đặt trước qua Zalo' : 'Đặt ngay qua Zalo')}
+            ${!c.plain && html`<span class="rail-btns" hidden>
               <button type="button" class="rail-btn" data-rail="-1" aria-label="Mẫu trước">${raw(ARROW_L)}</button>
               <button type="button" class="rail-btn" data-rail="1" aria-label="Mẫu tiếp">${raw(ARROW_R)}</button>
-            </span>
-          </header>
-          <div class="coll-row">${c.items.map(card)}</div>`
-        : html`<div class="grid-products">${c.items.map(card)}</div>`}
+            </span>`}
+          </header>`}
+        ${c.plain ? html`<div class="grid-products">${c.items.map(card)}</div>` : html`<div class="coll-row">${c.items.map(card)}</div>`}
       </section>`.s).join('')
       : html`<div class="empty-note">${products.length
         ? html`Không có mẫu phù hợp. <button class="linkish" data-reset>Xem tất cả mẫu</button>`
@@ -213,7 +250,7 @@ function render(root, { shop, products, groups = [] }) {
     });
 
     if (nav) {
-      nav.innerHTML = shown.filter((c) => c.name).map((c) => html`<a href="#${c.key}" data-coll="${c.key}">${c.name}</a>`.s).join('');
+      nav.innerHTML = shown.filter((c) => c.name).map((c) => html`<a href="#${c.key}" data-coll="${c.key}">${c.nav || c.name}</a>`.s).join('');
       nav.hidden = shown.length < 2;
       spy?.disconnect();
       if (shown.length) setActive(shown[0].key);
@@ -233,6 +270,10 @@ function render(root, { shop, products, groups = [] }) {
   root.addEventListener('click', (e) => {
     const pc = e.target.closest('[data-pid]');
     if (pc) { openDetail(products.find((p) => String(p.id) === pc.dataset.pid)); return; }
+    const dlv = e.target.closest('[data-dlv]');
+    if (dlv) { openDelivered(delivered[Number(dlv.dataset.dlv)]); return; }
+    const pf = e.target.closest('[data-price]');
+    if (pf) { setPrice(pf.dataset.price); draw(); return; }
     const rail = e.target.closest('[data-rail]');
     if (rail) {
       const row = rail.closest('.coll').querySelector('.coll-row');
@@ -248,6 +289,7 @@ function render(root, { shop, products, groups = [] }) {
     }
     if (e.target.closest('[data-reset]')) {
       st.occ = ''; st.q = '';
+      setPrice('');
       const occ = root.querySelector('#occ'); if (occ) occ.value = '';
       const qi = root.querySelector('#q'); if (qi) qi.value = '';
       draw();
@@ -255,8 +297,37 @@ function render(root, { shop, products, groups = [] }) {
     }
     if (e.target.closest('[data-zalo]')) copyOrder(`Chào ${shop.shop_name}, mình muốn đặt hoa.`);
   });
+  function setPrice(key) {
+    st.price = key;
+    root.querySelectorAll('[data-price]').forEach((b) => {
+      b.classList.toggle('on', b.dataset.price === key);
+      b.setAttribute('aria-pressed', String(b.dataset.price === key));
+    });
+  }
   root.querySelector('#occ')?.addEventListener('change', (e) => { st.occ = e.target.value; draw(); });
   root.querySelector('#q')?.addEventListener('input', (e) => { st.q = e.target.value.trim(); draw(); });
+
+  // Ảnh "Hoa đã giao": xem lớn, đặt bó tương tự qua Zalo.
+  function openDelivered(d) {
+    sheet({
+      title: 'Hoa đã giao',
+      wide: true,
+      body: html`<div class="detail-layout">
+        <div class="detail-frame"><img class="detail-img" src="${d.photo_url}" alt="${d.items || 'Bó hoa đã giao'}"></div>
+        <div class="stack detail-info">
+          ${d.month && html`<div class="kicker">Tháng ${d.month}</div>`}
+          ${d.items && html`<p class="detail-desc">${d.items}</p>`}
+          <p class="muted small">Ảnh chụp thật trước khi giao. Hoa theo mùa nên bó của bạn có thể khác đôi chút về màu và số bông.</p>
+          ${zaloUrl && html`<a class="btn btn-primary btn-lg" href="${zaloUrl}" target="_blank" rel="noopener" id="order-like">${raw(ICON.chat)}Đặt bó tương tự qua Zalo</a>`}
+          ${phone && html`<a class="btn btn-lg" href="tel:${phone}">${raw(ICON.phone)}Gọi đặt hoa</a>`}
+        </div></div>`,
+      onMount(dlg) {
+        dlg.querySelector('#order-like')?.addEventListener('click', () => {
+          copyOrder(`Chào ${shop.shop_name}, mình muốn đặt bó giống ảnh "Hoa đã giao"${d.items ? ` (${d.items})` : ''}. Shop tư vấn giúp mình nhé!`);
+        });
+      },
+    });
+  }
 
   function openDetail(p) {
     const price = priceNow(p);

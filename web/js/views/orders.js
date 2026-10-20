@@ -571,7 +571,9 @@ export async function detail({ el, params }) {
           <div class="btns">
             <label class="btn" style="position: relative">Chụp lại<input type="file" accept="image/*" capture="environment" id="photo" style="position: absolute; inset: 0; opacity: 0"></label>
             <button class="btn btn-outline" id="share-photo">${raw(ICON.share)}Gửi khách</button>
-          </div>` : html`
+          </div>
+          <label class="check"><input type="checkbox" id="public-photo" ${o.public_photo ? 'checked' : ''}>Đăng ảnh lên trang khách (mục "Hoa đã giao")</label>
+          <div class="muted small" style="margin-top: -6px">Chỉ hiện ảnh và tên mẫu, không hiện tên, số điện thoại hay địa chỉ khách.</div>` : html`
           <label class="photo-drop">${raw(ICON.camera)}<span id="photo-label">Chụp ảnh bó hoa để gửi khách</span><input type="file" accept="image/*" capture="environment" id="photo"></label>`}
       </section>
       ${ended && html`<a class="btn btn-outline btn-block no-print" href="#/don/moi?from=${o.id}">Đặt lại đơn này</a>`}
@@ -674,6 +676,16 @@ export async function detail({ el, params }) {
     } catch (err) {
       toast(errMsg(err), 'error');
       if (label) label.textContent = 'Chụp ảnh bó hoa để gửi khách';
+    }
+  });
+
+  $('#public-photo')?.addEventListener('change', async (e) => {
+    try {
+      await db.updateOrder(o.id, { public_photo: e.target.checked });
+      toast(e.target.checked ? 'Đã đăng ảnh lên trang khách' : 'Đã gỡ ảnh khỏi trang khách');
+    } catch (err) {
+      e.target.checked = !e.target.checked;
+      toast(errMsg(err), 'error');
     }
   });
 

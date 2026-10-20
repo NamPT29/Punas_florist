@@ -95,6 +95,11 @@ try {
     await page.locator('.progress .step.now', { hasText: 'Đang cắm' }).waitFor();
     await page.locator('#next').click();
     await toastSays('Đang giao');
+    // Chụp ảnh bó hoa và đăng lên trang khách (mục "Hoa đã giao").
+    await page.locator('#photo').setInputFiles(new URL('./fixtures/cover-test.jpg', import.meta.url).pathname);
+    await toastSays('Đã lưu ảnh');
+    await page.locator('#public-photo').check();
+    await toastSays('Đã đăng ảnh lên trang khách');
   });
 
   await step('Bán tại quầy', async () => {
@@ -248,12 +253,19 @@ try {
   });
 
   await step('Trang cho khách: xem mẫu, lọc, mở chi tiết', async () => {
+    // Ngày lễ cố định cho bài thử: chưa có lễ nào gần; đoạn sau mới đặt lễ sau 3 ngày.
+    const setHolidays = (hs) => page.evaluate((list) => {
+      const s = JSON.parse(localStorage.getItem('shophoa-demo-v1'));
+      s.settings.holidays = list;
+      localStorage.setItem('shophoa-demo-v1', JSON.stringify(s));
+    }, hs);
     await page.goto(`${admin}#/san-pham`);
     await page.locator('#q').fill('hong do');  // mẫu nằm trong nhóm "Hoa hồng": tìm là ra
     await page.locator('#results a.item', { hasText: 'Bó hồng đỏ' }).click();
     await page.locator('textarea[name=description]').fill('Bó hoa thử nghiệm cho trang khách');
     await page.locator('#save').click();
     await toastSays('Đã lưu sản phẩm');
+    await setHolidays([]);  // sau khi lưu: trang quản lý đang mở không ghi đè nữa
     await page.goto(`${base}shop/`);  // địa chỉ cũ: phải tự chuyển về trang chính
     await page.waitForURL(base);
     await page.getByRole('heading', { name: 'Mẫu hoa' }).waitFor();
@@ -273,6 +285,18 @@ try {
     await page.locator('#occ').selectOption('Khai trương');
     assert.ok(await page.locator('.p-card').count() < all);
     await page.locator('#occ').selectOption('');
+    // Lọc theo giá.
+    await page.locator('[data-price="lt"]').click();
+    const cheap = await page.locator('.p-card').count();
+    assert.ok(cheap > 0 && cheap < all, 'lọc dưới 250k');
+    assert.match(await page.locator('#cat-sub').textContent(), /Dưới 250k/);
+    await page.locator('[data-price=""]').click();
+    assert.equal(await page.locator('.p-card').count(), all);
+    // Ảnh "Hoa đã giao" chủ shop đã chọn đăng.
+    assert.equal(await page.locator('.dlv').count(), 1);
+    await page.locator('.dlv').click();
+    await page.locator('dialog #order-like').waitFor();
+    await page.locator('dialog [data-close]').click();
     await page.locator('.p-card', { hasText: 'Bó hồng đỏ' }).click();
     await page.getByText('Bộ sưu tập · Hoa hồng').waitFor();
     await page.locator('dialog .detail-price').waitFor();
@@ -280,6 +304,13 @@ try {
     assert.ok((await page.locator('#order-zalo').getAttribute('href')).startsWith('https://zalo.me/'));
     await shot('11-chi-tiet-mau');
     await page.locator('dialog [data-close]').click();
+    // Còn 3 ngày tới lễ: mẫu của dịp lên đầu kèm đếm ngược (chưa mẫu nào ghi dịp thì lấy mẫu có giá lễ).
+    await setHolidays([addDays(today(), 3).slice(5)]);
+    await page.reload();
+    await page.locator('.coll.hol .hol-badge', { hasText: 'Còn 3 ngày' }).waitFor();
+    assert.ok(await page.locator('.coll.hol .p-card').count() >= 1);
+    assert.equal(await page.locator('.coll').first().getAttribute('id'), 'bst-le', 'dịp lễ nằm đầu tiên');
+    await shot('11b-dip-le');
     await page.setViewportSize({ width: 1280, height: 900 });
     await shot('12-trang-khach-may-tinh');
     await page.setViewportSize({ width: 390, height: 844 });

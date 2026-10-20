@@ -2,7 +2,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createDemoBackend } from '../web/js/backend-demo.js';
-import { reservedByMaterial, materialStatus, nextHoliday, upcomingBirthdays, monthReport, dashboard, priceOf, productCost } from '../web/js/stats.js';
+import { reservedByMaterial, materialStatus, nextHoliday, upcomingBirthdays, monthReport, dashboard, priceOf, productCost,
+  holidayName, holidayProducts } from '../web/js/stats.js';
 import { addDays, today, phoneFmt, moneyShort, money, parseMoney, html, raw, toCsv } from '../web/js/util.js';
 import { slotStart } from '../web/js/util.js';
 
@@ -187,4 +188,27 @@ test('giá vốn: theo công thức nếu có, không thì lấy giá tự nhậ
   assert.equal(productCost({ components: [{ material_id: 1, qty: 20 }, { material_id: 2, qty: 2 }], cost: 99 }, materials), 310000);
   assert.equal(productCost({ components: [], cost: 180000 }, materials), 180000);
   assert.equal(productCost({ components: [], cost: null }, materials), 0);
+});
+
+test('bộ sưu tập dịp lễ: nhận mẫu theo ngày hoặc tên dịp, không có thì lấy mẫu có giá lễ', () => {
+  const P = [
+    { name: 'a', categories: ['Ngày 20/10'] }, { name: 'b', categories: ['Sinh nhật'], holiday_price: 1 },
+    { name: 'c', categories: ['Phụ nữ'] }, { name: 'd', categories: ['120/100'] }, { name: 'e', categories: ['20-10'] },
+  ];
+  assert.deepEqual(holidayProducts(P, '2026-10-20').map((p) => p.name), ['a', 'c', 'e']);
+  assert.deepEqual(holidayProducts(P, '2027-02-14').map((p) => p.name), ['b']);
+  assert.equal(holidayName('2026-10-20'), 'Phụ nữ Việt Nam 20/10');
+  assert.equal(holidayName('2026-06-01'), 'Dịp 01/06');
+});
+
+test('ảnh "Hoa đã giao": chỉ ảnh chủ shop chọn đăng, không lộ thông tin khách', async () => {
+  const db = createDemoBackend(memoryStorage());
+  const [o1, o2] = (await db.listOrders({})).filter((o) => o.status !== 'huy');
+  await db.updateOrder(o1.id, { photo_url: 'data:image/jpeg;base64,x', public_photo: true });
+  await db.updateOrder(o2.id, { photo_url: 'data:image/jpeg;base64,y' });
+  const { delivered } = await db.publicCatalog();
+  assert.equal(delivered.length, 1);
+  assert.deepEqual(Object.keys(delivered[0]).sort(), ['items', 'month', 'photo_url']);
+  assert.match(delivered[0].month, /^\d{2}\/\d{4}$/);
+  assert.equal(delivered[0].items, o1.items.map((i) => i.name).join(', '));
 });

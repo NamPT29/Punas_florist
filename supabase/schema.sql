@@ -130,6 +130,8 @@ create table if not exists orders (
   created_at timestamptz not null default now(),
   created_by uuid default auth.uid()
 );
+-- Chủ shop chọn đăng ảnh bó hoa của đơn lên trang khách (mục "Hoa đã giao").
+alter table orders add column if not exists public_photo boolean not null default false;
 create index if not exists orders_delivery_date_idx on orders (delivery_date);
 create index if not exists orders_status_idx on orders (status);
 create index if not exists orders_customer_idx on orders (customer_id);
@@ -449,8 +451,9 @@ begin
   return v_id;
 end $$;
 
--- Trang cho khách (không cần đăng nhập): chỉ trả thông tin shop, sản phẩm đang bán và các nhóm
--- (bộ sưu tập) có sản phẩm đang bán; không có giá vốn, công thức, tồn kho.
+-- Trang cho khách (không cần đăng nhập): chỉ trả thông tin shop, sản phẩm đang bán, các nhóm
+-- (bộ sưu tập) có sản phẩm đang bán và ảnh "Hoa đã giao" chủ shop chọn đăng (chỉ ảnh, tên mẫu, tháng);
+-- không có giá vốn, công thức, tồn kho, thông tin khách.
 create or replace function public_catalog() returns jsonb
 language sql stable security definer set search_path = public as $$
   select jsonb_build_object(
@@ -463,7 +466,12 @@ language sql stable security definer set search_path = public as $$
     'products', coalesce((select jsonb_agg(jsonb_build_object(
                   'id', id, 'name', name, 'description', description, 'categories', categories,
                   'price', price, 'holiday_price', holiday_price, 'photo_url', photo_url, 'group_id', group_id) order by name)
-                from products where active), '[]'::jsonb));
+                from products where active), '[]'::jsonb),
+    'delivered', coalesce((select jsonb_agg(jsonb_build_object('photo_url', x.photo_url, 'items', x.items, 'month', x.month))
+                from (select o.photo_url, to_char(o.delivery_date, 'MM/YYYY') as month,
+                             (select string_agg(i.name, ', ' order by i.id) from order_items i where i.order_id = o.id) as items
+                      from orders o where o.public_photo and o.photo_url is not null and o.status <> 'huy'
+                      order by o.delivery_date desc, o.id desc limit 12) x), '[]'::jsonb));
 $$;
 revoke all on function public_catalog() from public;
 grant execute on function public_catalog() to anon, authenticated;

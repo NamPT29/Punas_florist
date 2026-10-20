@@ -129,6 +129,43 @@ body.store { padding-bottom: calc(84px + var(--safe-b)); }
 .coll-row::-webkit-scrollbar { display: none; }
 .coll-row > .p-card { scroll-snap-align: start; }
 .rail-btns { display: none; }
+
+/* Lọc theo giá */
+.price-filter { display: flex; gap: 8px; margin: 16px -20px 0; padding: 0 20px; overflow-x: auto; scrollbar-width: none; }
+.price-filter::-webkit-scrollbar { display: none; }
+.price-filter button {
+  flex-shrink: 0; min-height: 40px; padding: 0 16px; border: 1px solid var(--hair); border-radius: 999px;
+  background: transparent; color: var(--ink-2); font-size: 13px; font-weight: 500; white-space: nowrap; cursor: pointer;
+}
+.price-filter button:hover { border-color: var(--rose-line); }
+.price-filter button.on { border-color: var(--rose-line); background: var(--rose-soft); color: var(--rose-ink); font-weight: 600; }
+
+/* Bộ sưu tập dịp lễ: dải nền hồng nhạt, đếm ngược, nút đặt trước. */
+.coll.hol { margin: 0 -20px; padding: 26px 20px 24px; background: var(--rose-wash); }
+.coll.hol + .coll { border-top: 0; }
+.coll.hol .coll-head { flex-direction: column; align-items: flex-start; gap: 6px; }
+.coll.hol .coll-head h3 { color: var(--rose-ink); }
+.hol-badge {
+  display: inline-flex; align-items: center; min-height: 26px; padding: 0 11px; border-radius: 999px;
+  background: var(--rose); color: #fff; font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+}
+.hol-cta { margin-top: 6px; min-height: 40px; }
+
+/* Ảnh "Hoa đã giao": điện thoại vuốt ngang, máy tính lưới 6 cột. */
+.delivered { margin-top: 56px; }
+.delivered h2 { margin: 2px 0 0; font-family: var(--display); font-size: clamp(32px, 5vw, 46px); font-weight: 600; line-height: 1.1; }
+.dlv-row {
+  display: grid; grid-auto-flow: column; grid-auto-columns: 46%; gap: 12px; margin: 18px -20px 0; padding: 0 20px 4px;
+  overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding: 0 20px; scrollbar-width: none;
+}
+.dlv-row::-webkit-scrollbar { display: none; }
+.dlv { position: relative; aspect-ratio: 1; padding: 0; border: 0; border-radius: 4px; overflow: hidden; background: var(--mat); cursor: zoom-in; scroll-snap-align: start; }
+.dlv img { display: block; width: 100%; height: 100%; object-fit: cover; transition: transform .6s ease; }
+.dlv:hover img { transform: scale(1.04); }
+.dlv-cap {
+  position: absolute; left: 0; right: 0; bottom: 0; padding: 26px 10px 8px; font-size: 12px; text-align: left; color: #fff;
+  background: linear-gradient(transparent, rgba(23, 17, 19, .68)); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
 .empty-note { padding: 40px 0; text-align: center; color: var(--muted); }
 .linkish { min-height: 40px; padding: 0 6px; border: 0; background: none; color: var(--rose); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
 
@@ -186,6 +223,7 @@ body.scrolled .dock { transform: none; }
 @media (min-width: 640px) {
   .grid-products { --rg: 36px; grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: 20px; }
   .coll-row { grid-auto-columns: 36%; column-gap: 20px; }
+  .dlv-row { grid-auto-columns: 30%; }
   .steps { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px; }
   .p-name { font-size: 15px; }
   .p-price { font-size: 15px; }
@@ -217,6 +255,13 @@ body.scrolled .dock { transform: none; }
   .rail-btn { display: grid; place-items: center; width: 42px; height: 42px; border: 1px solid var(--hair); border-radius: 50%; background: var(--surface); color: var(--ink); cursor: pointer; transition: border-color .2s, color .2s; }
   .rail-btn:hover:not(:disabled) { border-color: var(--rose); color: var(--rose); }
   .rail-btn:disabled { opacity: .35; cursor: default; }
+  .price-filter { margin: 20px 0 0; padding: 0; }
+  .coll.hol { margin: 0 -32px; padding: 40px 32px; }
+  .coll.hol .coll-head { gap: 0; }
+  .hol-badge { order: -1; margin-bottom: 12px; }
+  .hol-cta { order: 4; margin-top: 18px; }
+  .delivered { margin-top: 72px; }
+  .dlv-row { grid-auto-flow: row; grid-template-columns: repeat(6, minmax(0, 1fr)); grid-auto-columns: auto; margin: 22px 0 0; padding: 0; overflow: visible; }
   .coll-head::after { content: ''; order: 1; width: 36px; height: 1px; margin: 18px 0 12px; background: var(--rose); }
   .coll-meta { order: 2; }
   .grid-products { --rg: 44px; grid-template-columns: repeat(4, minmax(0, 1fr)); column-gap: 28px; }

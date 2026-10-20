@@ -105,6 +105,9 @@ Mở **trang quản lý** (`…/quan-ly/`) bằng **Safari** → nút **Chia s�
 - Địa chỉ: chính là tên miền, ví dụ `https://punas.pages.dev`. Trong app quản lý, bấm **Trang khách** ở Tổng quan, hoặc vào **Thêm → Trang cho khách xem hoa** để mở hay chia sẻ link. Link cũ có `/shop/` vẫn tự chuyển về trang chính.
 - Trang lấy dữ liệu từ app quản lý. Sản phẩm nào **Đang bán** thì hiện, bỏ chọn thì ẩn. Sửa giá, ảnh hay mô tả xong là trang tự cập nhật.
 - Mẫu hoa được xếp theo **bộ sưu tập**, chính là các **nhóm** trong mục Sản phẩm, theo thứ tự tên. Mẫu chưa xếp nhóm nằm ở "Mẫu khác". Mọi ảnh hiện trong khung cùng cỡ có viền kem, nên ảnh chụp khác nền vẫn gọn. Khách lọc theo **dịp** ở ô "Dịp" (lấy từ ô "Dịp" của từng sản phẩm).
+- **Dịp lễ:** trong 14 ngày trước một ngày lễ (danh sách ngày lễ ở Cài đặt), trang tự đưa mẫu của dịp đó lên đầu, kèm đếm ngược "Còn 5 ngày". Mẫu của dịp là mẫu có ô "Dịp" ghi ngày (VD `20/10`) hoặc tên dịp (VD `Phụ nữ`, `Nhà giáo`). Nếu chưa mẫu nào ghi, trang lấy các mẫu có giá ngày lễ.
+- **Lọc theo giá:** Dưới 250k, 250k – 400k, Trên 400k (theo giá đang áp dụng hôm nay).
+- **Hoa đã giao:** trong một đơn đã chụp ảnh bó hoa, tick **"Đăng ảnh lên trang khách"**. Trang chỉ hiện ảnh, tên mẫu và tháng giao (12 ảnh mới nhất), không hiện thông tin khách. Bỏ tick là gỡ ảnh.
 - Vào **Thêm → Thông tin shop** để điền **số Zalo**, **giờ mở cửa** và **lời giới thiệu**. Mỗi sản phẩm có ô **Mô tả cho khách**.
 - Cũng trong đó, tải **ảnh bìa** (ảnh lớn phủ kín đầu trang) và điền **khẩu hiệu** (chữ lớn trên ảnh). Nên dùng ảnh ngang, rõ nét, chụp hoa thật của shop. Chưa có ảnh thì đầu trang dùng nền hoa văn tối màu.
 - Zalo không cho điền sẵn tin nhắn qua link. Vì vậy khi khách bấm "Đặt qua Zalo", tên mẫu hoa và giá được chép sẵn để khách dán vào tin nhắn.

@@ -1,5 +1,5 @@
 // Tính toán thuần (không gọi mạng) cho Tổng quan, Kho, Báo cáo. Dùng chung cho bản thật và bản dùng thử.
-import { addDays, daysBetween, monthRange, parseIso, isoOf } from './util.js';
+import { addDays, daysBetween, monthRange, parseIso, isoOf, ddmm, fold } from './util.js';
 
 const active = (o) => o.status !== 'huy';
 const sum = (xs, f) => xs.reduce((s, x) => s + (Number(f(x)) || 0), 0);
@@ -39,6 +39,28 @@ export function nextHoliday(holidays, todayIso, withinDays = 7) {
     if ((holidays || []).includes(d.slice(5))) return { date: d, daysLeft: i };
   }
   return null;
+}
+
+// Ngày lễ quen thuộc: tên hiển thị và từ khóa (không dấu) để nhận ra mẫu dành cho dịp đó.
+const HOLIDAY_INFO = {
+  '02-14': ['Valentine 14/2', ['valentine']],
+  '03-08': ['Quốc tế Phụ nữ 8/3', ['phu nu']],
+  '10-20': ['Phụ nữ Việt Nam 20/10', ['phu nu']],
+  '11-20': ['Nhà giáo Việt Nam 20/11', ['nha giao', 'thay co']],
+  '12-24': ['Giáng sinh', ['giang sinh', 'noel']],
+};
+export const holidayName = (iso) => HOLIDAY_INFO[iso.slice(5)]?.[0] || `Dịp ${ddmm(iso)}`;
+
+/**
+ * Mẫu cho một dịp lễ: ô "Dịp" của mẫu ghi đúng ngày (20/10, 20-10, Ngày 20/10…) hoặc tên dịp (Phụ nữ, Nhà giáo…).
+ * Chưa mẫu nào ghi thì lấy các mẫu có giá ngày lễ riêng.
+ */
+export function holidayProducts(products, iso) {
+  const [, m, d] = iso.split('-').map(Number);
+  const date = new RegExp(`(^|\\D)0?${d}\\s*[/.-]\\s*0?${m}(\\D|$)`);
+  const words = HOLIDAY_INFO[iso.slice(5)]?.[1] || [];
+  const tagged = products.filter((p) => (p.categories || []).some((c) => date.test(c) || words.some((w) => fold(c).includes(w))));
+  return tagged.length ? tagged : products.filter((p) => p.holiday_price != null);
 }
 
 export const isHoliday = (holidays, iso) => !!iso && (holidays || []).includes(iso.slice(5));

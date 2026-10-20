@@ -155,7 +155,7 @@ export async function createSupabaseBackend(url, key, { createClient, clientOpti
     createOrder: (payload) => rpc('create_order', { p: payload }),
     setOrderStatus: (id, status) => rpc('set_order_status', { p_order: id, p_status: status }),
     async updateOrder(id, patch) {
-      const allowed = ['paid', 'payment_method', 'shipper', 'photo_url', 'note', 'card_message', 'delivery_slot', 'delivery_date', 'address'];
+      const allowed = ['paid', 'payment_method', 'shipper', 'photo_url', 'public_photo', 'note', 'card_message', 'delivery_slot', 'delivery_date', 'address'];
       const fields = Object.fromEntries(Object.entries(patch).filter(([k]) => allowed.includes(k)));
       await run(sb.from('orders').update(fields).eq('id', id));
     },

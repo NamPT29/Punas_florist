@@ -199,6 +199,11 @@ export function createDemoBackend(storage = globalThis.localStorage) {
         products: s.products.filter((p) => p.active).sort((a, b) => a.name.localeCompare(b.name, 'vi'))
           .map(({ id: pid, name, description, categories, price, holiday_price, photo_url, group_id }) =>
             ({ id: pid, name, description: description || '', categories, price, holiday_price, photo_url, group_id: group_id ?? null })),
+        // Ảnh "Hoa đã giao" chủ shop chọn đăng: chỉ ảnh, tên mẫu, tháng.
+        delivered: s.orders.filter((o) => o.public_photo && o.photo_url && o.status !== 'huy')
+          .sort((a, b) => b.delivery_date.localeCompare(a.delivery_date) || b.id - a.id).slice(0, 12)
+          .map((o) => ({ photo_url: o.photo_url, items: o.items.map((i) => i.name).join(', '),
+            month: `${o.delivery_date.slice(5, 7)}/${o.delivery_date.slice(0, 4)}` })),
       });
     },
 
@@ -293,7 +298,7 @@ export function createDemoBackend(storage = globalThis.localStorage) {
     }),
     setOrderStatus: tx((oid, status) => setStatus(orderRow(oid), status)),
     updateOrder: tx((oid, patch) => {
-      const allowed = ['paid', 'payment_method', 'shipper', 'photo_url', 'note', 'card_message', 'delivery_slot', 'delivery_date', 'address'];
+      const allowed = ['paid', 'payment_method', 'shipper', 'photo_url', 'public_photo', 'note', 'card_message', 'delivery_slot', 'delivery_date', 'address'];
       const o = orderRow(oid);
       for (const k of allowed) if (k in patch) o[k] = patch[k];
     }),
