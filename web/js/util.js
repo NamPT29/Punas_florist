@@ -247,5 +247,7 @@ export const ICON = {
   chat: svg('<path d="M4 5h16v11H9l-5 4z"/><path d="M8 9h8M8 12h5"/>', 20),
   pin: svg('<path d="M12 21s7-6.2 7-12a7 7 0 0 0-14 0c0 5.8 7 12 7 12z"/><circle cx="12" cy="9" r="2.5"/>', 18),
   clock: svg('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>', 18),
-  logo: svg('<circle cx="12" cy="9" r="2.2"/><path d="M12 6.8C11 3.5 13 3.5 12 6.8M14.2 9c3.3-1 3.3 1 0 0M9.8 9c-3.3-1-3.3 1 0 0M12 11.2c-1 3.3 1 3.3 0 0M12 13v8M12 17c2-2 4-2 5-1.5"/>', 16),
+  // Logo shop: bông hoa 5 cánh (cùng hình với icons/icon.svg).
+  logo: `<svg width="16" height="16" viewBox="0 0 100 100" aria-hidden="true"><g fill="currentColor">${[0, 72, 144, 216, 288]
+    .map((a) => `<ellipse cx="50" cy="27" rx="16" ry="21" transform="rotate(${a} 50 50)"/>`).join('')}</g><circle cx="50" cy="50" r="9" fill="#FCF8F6"/></svg>`,
 };

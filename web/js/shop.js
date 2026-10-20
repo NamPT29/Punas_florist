@@ -5,8 +5,15 @@ import { nextHoliday, priceOf, holidayName, holidayProducts } from './stats.js';
 
 const FLOWER = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="9" r="2.2"/><path d="M12 6.8C11 3.5 13 3.5 12 6.8M14.2 9c3.3-1 3.3 1 0 0M9.8 9c-3.3-1-3.3 1 0 0M12 11.2c-1 3.3 1 3.3 0 0M12 13v8M12 17c2-2 4-2 5-1.5M12 19c-2-2-4-2-5-1.5"/></svg>';
 
-// Hoa văn dưới tên shop, kiểu thiệp mời.
-const ORNAMENT = '<svg class="orn" viewBox="0 0 160 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" aria-hidden="true"><path d="M6 12h46M108 12h46"/><path d="M52 12c7-8 14-8 18 0M108 12c-7-8-14-8-18 0"/><circle cx="80" cy="12" r="3.5"/><path d="M80 3.5c-3 2.5-3 4.5 0 5M80 20.5c3-2.5 3-4.5 0-5M71.5 12c2.5-3 4.5-3 5 0M88.5 12c-2.5 3-4.5 3-5 0"/></svg>';
+// Logo: bông hoa 5 cánh (cùng hình với web/icons/icon.svg), bản cho nền tối.
+const petals = (cy, rx, ry, fill) => `<g fill="${fill}">${[0, 72, 144, 216, 288]
+  .map((a) => `<ellipse cx="50" cy="${cy}" rx="${rx}" ry="${ry}"${a ? ` transform="rotate(${a} 50 50)"` : ''}/>`).join('')}</g>`;
+const BRAND_MARK = `<svg class="brand-mark" viewBox="0 0 100 100" aria-hidden="true">${petals(27, 15, 20, '#E58AAB')}${petals(35, 7, 10, '#F6C9D8')}<circle cx="50" cy="50" r="8" fill="#2A1A1F"/><circle cx="50" cy="50" r="4.5" fill="#F6D58C"/></svg>`;
+// Tên shop: chữ cuối tô hồng như logo ("Punas Bloom").
+const brandName = (name) => {
+  const words = String(name || '').trim().split(/\s+/);
+  return words.length > 1 ? html`${words.slice(0, -1).join(' ')} <span>${words.at(-1)}</span>` : html`${name}`;
+};
 
 // Hoa hồng nét mảnh làm nền đầu trang khi shop chưa tải ảnh bìa.
 const rose = (x, y, s) => `<g transform="translate(${x} ${y}) scale(${s})"><path d="M100 38A40 40 0 0 1 159 81A40 40 0 0 1 136 150A40 40 0 0 1 64 150A40 40 0 0 1 41 81A40 40 0 0 1 100 38Z"/><path d="M100 100m-6 0a6 6 0 1 1 12 0a12 12 0 1 1-24 0a20 20 0 1 1 40 0a30 30 0 1 1-60 0a42 42 0 1 1 84 0"/></g>`;
@@ -99,8 +106,8 @@ function render(root, { shop, products, groups = [], delivered = [] }) {
     <header class="hero ${shop.cover_url ? 'has-photo' : 'no-photo'}">
       ${shop.cover_url ? html`<img class="hero-bg" src="${shop.cover_url}" alt="" fetchpriority="high">` : raw(DECO)}
       <div class="hero-brand">
-        ${raw(ORNAMENT)}
-        <div class="hero-name">${shop.shop_name}</div>
+        ${raw(BRAND_MARK)}
+        <div class="hero-name">${brandName(shop.shop_name)}</div>
         <div class="hero-city">${city}</div>
       </div>
       <div class="hero-copy wrap">
@@ -178,7 +185,7 @@ function render(root, { shop, products, groups = [], delivered = [] }) {
 
     <footer class="foot">
       <div class="wrap">
-        <div><div class="foot-name">${shop.shop_name}</div><div class="hero-city">${city}</div></div>
+        <div class="foot-brand">${raw(BRAND_MARK)}<div><div class="foot-name">${brandName(shop.shop_name)}</div><div class="hero-city">${city}</div></div></div>
         <div class="foot-info">
           ${shop.address && html`<a href="${mapUrl}" target="_blank" rel="noopener">${raw(ICON.pin)}${shop.address}</a>`}
           ${shop.open_hours && html`<span>${raw(ICON.clock)}${shop.open_hours}</span>`}

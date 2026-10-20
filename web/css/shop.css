@@ -1,5 +1,5 @@
 /* Trang cho khách: ảnh bìa lớn, chữ in hoa giãn cách, nền tối sang trọng. Dùng chung màu với app.css. */
-:root { --display: 'Cormorant Garamond', var(--serif); --night: #171113; --wine: #2A1A1F; }
+:root { --brand: 'Playfair Display', var(--serif); --display: 'Cormorant Garamond', var(--serif); --night: #171113; --wine: #2A1A1F; }
 html { scroll-behavior: smooth; }
 body.store { padding-bottom: calc(84px + var(--safe-b)); }
 .wrap { max-width: 1160px; margin: 0 auto; padding: 0 20px; }
@@ -28,8 +28,10 @@ body.store { padding-bottom: calc(84px + var(--safe-b)); }
 .hero-deco { opacity: .42; }
 .hero-brand, .hero-copy { position: relative; z-index: 1; }
 .hero-brand { padding: 26px 20px 0; text-align: center; }
-.orn { width: 128px; height: 22px; opacity: .9; }
-.hero-name { font-family: var(--display); font-size: clamp(30px, 6vw, 46px); font-weight: 600; line-height: 1.15; text-shadow: 0 2px 18px rgba(0,0,0,.35); }
+/* Logo: bông hoa + tên shop kiểu chữ của logo, chữ cuối màu hồng. */
+.brand-mark { display: block; width: 52px; height: 52px; margin: 0 auto 10px; filter: drop-shadow(0 4px 14px rgba(0, 0, 0, .25)); }
+.hero-name { font-family: var(--brand); font-size: clamp(30px, 6vw, 46px); font-weight: 500; line-height: 1.15; text-shadow: 0 2px 18px rgba(0,0,0,.35); }
+.hero-name span, .foot-name span { color: #F3B6CA; }
 .hero-city { margin-top: 4px; font-size: 11px; letter-spacing: .38em; text-transform: uppercase; opacity: .9; }
 .hero-copy { width: 100%; padding-bottom: 44px; }
 .hero-copy h1 {
@@ -202,7 +204,9 @@ body.store { padding-bottom: calc(84px + var(--safe-b)); }
 
 .foot { padding: 34px 0 28px; background: var(--night); color: #CFC2C7; font-size: 14px; }
 .foot .wrap { display: grid; gap: 18px; }
-.foot-name { font-family: var(--display); font-size: 28px; font-weight: 600; color: #fff; line-height: 1.1; }
+.foot-brand { display: flex; align-items: center; gap: 14px; }
+.foot-brand .brand-mark { width: 44px; height: 44px; margin: 0; filter: none; }
+.foot-name { font-family: var(--brand); font-size: 28px; font-weight: 500; color: #fff; line-height: 1.1; }
 .foot .hero-city { opacity: .7; }
 .foot-info { display: grid; gap: 8px; }
 .foot-info a, .foot-info span { display: inline-flex; align-items: center; gap: 8px; color: #CFC2C7; }

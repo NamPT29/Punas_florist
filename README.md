@@ -111,6 +111,7 @@ Mở **trang quản lý** (`…/quan-ly/`) bằng **Safari** → nút **Chia s�
 - Vào **Thêm → Thông tin shop** để điền **số Zalo**, **giờ mở cửa** và **lời giới thiệu**. Mỗi sản phẩm có ô **Mô tả cho khách**.
 - Cũng trong đó, tải **ảnh bìa** (ảnh lớn phủ kín đầu trang) và điền **khẩu hiệu** (chữ lớn trên ảnh). Nên dùng ảnh ngang, rõ nét, chụp hoa thật của shop. Chưa có ảnh thì đầu trang dùng nền hoa văn tối màu.
 - Zalo không cho điền sẵn tin nhắn qua link. Vì vậy khi khách bấm "Đặt qua Zalo", tên mẫu hoa và giá được chép sẵn để khách dán vào tin nhắn.
+- **Logo:** bông hoa 5 cánh. File logo để dùng cho Facebook, Zalo, in ấn nằm ở `web/brand/`, tải trực tiếp được trên web: `…/brand/logo-vuong.png` (ảnh đại diện vuông), `…/brand/logo-ngang.png` (nền trong suốt), `…/brand/logo-ngang-nen-toi.png`, `…/brand/hoa.svg` (chỉ bông hoa, dạng vector).
 - Muốn đổi dòng tiêu đề hiện khi chia sẻ link lên Facebook hay Zalo, sửa thẻ `og:title` và `og:description` trong `web/index.html`.
 - Nếu bạn đã chạy `schema.sql` bản cũ, hãy chạy lại bản mới trong SQL Editor để có trang khách. Chạy lại an toàn, không mất dữ liệu.
 
