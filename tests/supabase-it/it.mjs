@@ -88,6 +88,8 @@ try {
     });
     product = (await owner.listProducts()).find((p) => p.id === id);
     assert.deepEqual(product.components.map((c) => c.qty).sort(), [2, 20]);
+    const manual = await owner.saveProduct({ id: null, name: 'Bó tự nhập vốn', price: 300000, cost: 180000, active: false, components: [] });
+    assert.equal((await owner.listProducts()).find((p) => p.id === manual).cost, 180000);
   });
 
   await step('Nhóm sản phẩm: tạo, trùng tên, chuyển sản phẩm vào, xóa nhóm vẫn giữ sản phẩm', async () => {

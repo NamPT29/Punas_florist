@@ -85,7 +85,17 @@ export async function createSupabaseBackend(url, key, { createClient, clientOpti
         .order('active', { ascending: false }).order('name'));
       return rows.map(withComponents);
     },
-    saveProduct: (p) => rpc('save_product', { p }),
+    async saveProduct(p) {
+      const id = await rpc('save_product', { p });
+      // schema.sql bản cũ lặng lẽ bỏ qua giá vốn: báo rõ để chủ shop chạy lại, khỏi mất số vừa nhập.
+      if (p.cost != null) {
+        const row = await run(sb.from('products').select('*').eq('id', id).single());
+        if (!('cost' in row)) {
+          throw new Error('Đã lưu sản phẩm nhưng chưa lưu được giá vốn: vào Supabase → SQL Editor, chạy lại file supabase/schema.sql mới nhất rồi lưu lại.');
+        }
+      }
+      return id;
+    },
 
     async listGroups() {
       try {

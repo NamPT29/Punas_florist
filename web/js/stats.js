@@ -154,7 +154,7 @@ export function customerStats(customers, orders) {
   });
 }
 
-export const productCost = (product, materials) => sum(product.components || [], (c) => {
-  const m = materials.find((x) => x.id === c.material_id);
-  return (m?.cost || 0) * c.qty;
-});
+/** Giá vốn: có công thức thì tính từ giá hoa trong kho, chưa có thì lấy giá vốn chủ shop tự nhập. */
+export const productCost = (product, materials) => (product.components?.length
+  ? sum(product.components, (c) => (materials.find((x) => x.id === c.material_id)?.cost || 0) * c.qty)
+  : Number(product.cost) || 0);

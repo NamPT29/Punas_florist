@@ -194,7 +194,14 @@ try {
     await page.getByRole('link', { name: '+ Sản phẩm mới' }).click();
     await page.locator('select[name=group]').waitFor();
     assert.equal(await page.locator('select[name=group] option:checked').textContent(), 'Hoa hồng Plume');
-    await page.locator('a.back', { hasText: 'Hoa hồng Plume' }).click();
+    // Chưa có công thức thì tự nhập giá vốn.
+    await page.locator('input[name=name]').fill('Bó baby trắng');
+    await page.locator('input[name=price]').fill('300000');
+    await page.locator('input[name=cost]').fill('180000');
+    await page.locator('#profit', { hasText: '120.000' }).waitFor();
+    await page.locator('#save').click();
+    await toastSays('Đã lưu sản phẩm');
+    await page.locator('a.item', { hasText: 'Bó baby trắng' }).getByText('Vốn 180.000đ · lãi 40%').waitFor();
     // Sửa công thức một mẫu trong nhóm, lưu xong quay về nhóm.
     await page.locator('a.item', { hasText: 'Bó cẩm chướng hồng' }).click();
     await page.locator('#comps select').first().waitFor();
@@ -206,7 +213,7 @@ try {
     await page.goto(`${admin}#/san-pham`);
     await page.locator('a.folder', { hasText: 'Hoa hồng Plume' }).waitFor();
     await page.locator('#q').fill('plume');
-    assert.equal(await page.locator('#results a.item:not(.hidden)').count(), 2);
+    assert.equal(await page.locator('#results a.item:not(.hidden)').count(), 3);
   });
 
   await step('Khách hàng', async () => {
@@ -260,7 +267,7 @@ try {
     assert.deepEqual(await page.locator('.coll-head h3').allTextContents(), ['Giỏ hoa', 'Hoa hồng', 'Hoa hồng Plume']);
     const tops = await page.locator('section.coll', { hasText: 'Hoa hồng Plume' }).locator('.p-card')
       .evaluateAll((els) => els.map((e) => Math.round(e.getBoundingClientRect().top)));
-    assert.ok(tops.length === 2 && tops[0] === tops[1], 'mẫu trong bộ sưu tập chạy thành một hàng ngang');
+    assert.ok(tops.length === 3 && new Set(tops).size === 1, 'mẫu trong bộ sưu tập chạy thành một hàng ngang');
     await page.locator('#coll-nav a', { hasText: 'Hoa hồng Plume' }).click();
     await page.locator('#coll-nav a.on', { hasText: 'Hoa hồng Plume' }).waitFor();
     await page.locator('#occ').selectOption('Khai trương');

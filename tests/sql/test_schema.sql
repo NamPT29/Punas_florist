@@ -77,6 +77,9 @@ select save_product((select to_jsonb(p) || jsonb_build_object('group_id', (selec
   'components', (select jsonb_agg(c) from product_components c where c.product_id = p.id)) from products p));
 select pg_temp.eq((select g.name from products p join product_groups g on g.id = p.group_id), 'Hoa hồng', 'sản phẩm vào nhóm');
 select pg_temp.eq((select count(*) from product_components), 3::bigint, 'lưu lại vẫn giữ công thức');
+select save_product('{"name":"Bó tự nhập vốn","price":300000,"cost":180000}');
+select pg_temp.eq((select cost from products where name = 'Bó tự nhập vốn'), 180000::numeric, 'giá vốn tự nhập');
+delete from products where name = 'Bó tự nhập vốn';
 insert into product_groups (name) values ('Xóa thử');
 update products set group_id = (select id from product_groups where name = 'Xóa thử');
 delete from product_groups where name = 'Xóa thử';

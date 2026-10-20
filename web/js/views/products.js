@@ -8,13 +8,16 @@ const photoSize = () => (app.db.mode === 'demo' ? 480 : 1000);
 function productItem(p, materials, groupName) {
   const cost = productCost(p, materials);
   const margin = p.price ? (p.price - cost) / p.price : 0;
+  const knownCost = p.components?.length || p.cost != null;
   return html`
     <a class="item" href="#/san-pham/${p.id}" data-name="${fold(`${p.name} ${groupName || ''}`)}" style="${p.active ? '' : 'opacity: .55'}">
       ${p.photo_url ? html`<img class="thumb" src="${p.photo_url}" alt="" loading="lazy">` : html`<div class="thumb"></div>`}
       <div class="grow">
         <div class="title">${p.name}${p.active ? '' : html` <span class="chip">Ngừng bán</span>`}</div>
         <div class="muted">${money(p.price)}${p.holiday_price != null ? ` · lễ ${money(p.holiday_price)}` : ''}${groupName ? ` · ${groupName}` : ''}</div>
-        <div class="small ${margin < 0.3 ? 'neg' : 'pos'}">Vốn ${money(cost)} · lãi ${Math.round(margin * 100)}%</div>
+        ${knownCost
+          ? html`<div class="small ${margin < 0.3 ? 'neg' : 'pos'}">Vốn ${money(cost)} · lãi ${Math.round(margin * 100)}%</div>`
+          : html`<div class="small muted">Chưa nhập giá vốn</div>`}
       </div>
       <span class="chev">›</span>
     </a>`;
@@ -219,7 +222,7 @@ export async function edit({ el, params, query }) {
   const isNew = params[0] === 'moi';
   const p = isNew
     ? { name: '', group_id: groups.some((g) => g.id === Number(query.g)) ? Number(query.g) : null,
-      description: '', categories: [], price: 0, holiday_price: null, photo_url: null, active: true, components: [] }
+      description: '', categories: [], price: 0, holiday_price: null, cost: null, photo_url: null, active: true, components: [] }
     : products.find((x) => x.id === Number(params[0]));
   if (!p) throw new Error('Không tìm thấy sản phẩm');
   const st = { ...p, components: p.components.map((c) => ({ ...c })) };
@@ -264,7 +267,10 @@ export async function edit({ el, params, query }) {
       </div><div class="col">
       <section class="card green">
         <div class="grid3" style="text-align: center; align-items: end">
-          <div><div class="muted">Giá vốn</div><b style="font-size: 16px" id="cost"></b></div>
+          <div>
+            <label class="field" style="text-align: center" id="cost-manual">Giá vốn<input name="cost" data-money inputmode="numeric" value="${st.cost != null ? num(st.cost) : ''}" placeholder="0" style="text-align: center; font-weight: 700"></label>
+            <div id="cost-auto"><div class="muted">Giá vốn</div><b style="font-size: 16px" id="cost"></b><div class="small muted">theo công thức</div></div>
+          </div>
           <label class="field" style="text-align: center">Giá bán<input name="price" data-money inputmode="numeric" value="${st.price ? num(st.price) : ''}" style="text-align: center; font-weight: 700"></label>
           <div><div class="muted">Lãi</div><b style="font-size: 16px" id="profit"></b><div class="small strong" id="pct"></div></div>
         </div>
@@ -297,12 +303,16 @@ export async function edit({ el, params, query }) {
           <span class="muted" style="width: 36px">${m?.unit}</span>
           <button type="button" class="icon-btn plain" data-cdel="${i}" aria-label="Bỏ">${raw(ICON.close)}</button>
         </div>`.s;
-    }).join('') : '<div class="muted">Chưa có thành phần. Không bắt buộc, nhưng có công thức thì kho tự trừ và biết lãi.</div>';
+    }).join('') : '<div class="muted">Chưa có công thức: giá vốn lấy theo ô Giá vốn bạn tự nhập. Có công thức thì kho tự trừ khi cắm và giá vốn tự tính.</div>';
     drawMoney();
   }
   function drawMoney() {
     const price = parseMoney(f.elements.price.value);
-    const cost = productCost(st, materials);
+    // Có công thức: giá vốn tự tính. Chưa có: dùng ô tự nhập.
+    const auto = st.components.length > 0;
+    $('#cost-auto').classList.toggle('hidden', !auto);
+    $('#cost-manual').classList.toggle('hidden', auto);
+    const cost = auto ? productCost(st, materials) : parseMoney(f.elements.cost.value);
     $('#cost').textContent = money(cost);
     $('#profit').textContent = money(price - cost);
     $('#profit').className = price - cost >= 0 ? 'pos' : 'neg';
@@ -314,7 +324,7 @@ export async function edit({ el, params, query }) {
   });
   el.addEventListener('input', (e) => {
     if (e.target.dataset.cq) { st.components[e.target.dataset.cq].qty = Number(e.target.value.replace(',', '.')) || 0; drawMoney(); }
-    if (e.target.name === 'price') drawMoney();
+    if (e.target.name === 'price' || e.target.name === 'cost') drawMoney();
   });
   el.addEventListener('click', (e) => {
     const del = e.target.closest('[data-cdel]');
@@ -348,6 +358,7 @@ export async function edit({ el, params, query }) {
       categories: f.elements.cats.value.split(',').map((s) => s.trim()).filter(Boolean),
       price: parseMoney(f.elements.price.value),
       holiday_price: holiday ? parseMoney(holiday) : null,
+      cost: f.elements.cost.value.trim() ? parseMoney(f.elements.cost.value) : null,
       photo_url: st.photo_url,
       active: $('#active').checked,
       components: st.components.filter((c) => c.qty > 0),

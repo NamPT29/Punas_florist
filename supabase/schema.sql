@@ -68,6 +68,8 @@ create table if not exists products (
 
 -- Mô tả hiện trên trang cho khách.
 alter table products add column if not exists description text not null default '';
+-- Giá vốn tự nhập: dùng khi sản phẩm chưa có công thức (có công thức thì app tự tính từ giá hoa trong kho).
+alter table products add column if not exists cost numeric check (cost >= 0);
 
 -- Nhóm sản phẩm (như thư mục), VD "Hoa hồng Plume", có ảnh đại diện. Mỗi sản phẩm thuộc tối đa một nhóm;
 -- xóa nhóm thì sản phẩm vẫn còn, chuyển về "Chưa xếp nhóm".
@@ -417,24 +419,24 @@ begin
   end if;
 end $$;
 
--- Lưu sản phẩm cùng công thức. p: {id?, name, group_id, categories, price, holiday_price, photo_url, active, components:[{material_id, qty}]}
+-- Lưu sản phẩm cùng công thức. p: {id?, name, group_id, categories, price, holiday_price, cost, photo_url, active, components:[{material_id, qty}]}
 create or replace function save_product(p jsonb) returns bigint
 language plpgsql set search_path = public as $$
 declare v_id bigint := (p->>'id')::bigint;
 begin
   if coalesce(trim(p->>'name'), '') = '' then raise exception 'Chưa nhập tên sản phẩm'; end if;
   if v_id is null then
-    insert into products (name, group_id, description, categories, price, holiday_price, photo_url, active)
+    insert into products (name, group_id, description, categories, price, holiday_price, cost, photo_url, active)
     values (trim(p->>'name'), (p->>'group_id')::bigint, coalesce(trim(p->>'description'), ''),
             coalesce(array(select jsonb_array_elements_text(p->'categories')), '{}'),
-            (p->>'price')::numeric, (p->>'holiday_price')::numeric, p->>'photo_url',
+            (p->>'price')::numeric, (p->>'holiday_price')::numeric, (p->>'cost')::numeric, p->>'photo_url',
             coalesce((p->>'active')::boolean, true))
     returning id into v_id;
   else
     update products set name = trim(p->>'name'), group_id = (p->>'group_id')::bigint,
       description = coalesce(trim(p->>'description'), ''),
       categories = coalesce(array(select jsonb_array_elements_text(p->'categories')), '{}'),
-      price = (p->>'price')::numeric, holiday_price = (p->>'holiday_price')::numeric,
+      price = (p->>'price')::numeric, holiday_price = (p->>'holiday_price')::numeric, cost = (p->>'cost')::numeric,
       photo_url = p->>'photo_url', active = coalesce((p->>'active')::boolean, true)
     where id = v_id;
     if not found then raise exception 'Không tìm thấy sản phẩm'; end if;

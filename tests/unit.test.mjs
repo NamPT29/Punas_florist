@@ -2,7 +2,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createDemoBackend } from '../web/js/backend-demo.js';
-import { reservedByMaterial, materialStatus, nextHoliday, upcomingBirthdays, monthReport, dashboard, priceOf } from '../web/js/stats.js';
+import { reservedByMaterial, materialStatus, nextHoliday, upcomingBirthdays, monthReport, dashboard, priceOf, productCost } from '../web/js/stats.js';
 import { addDays, today, phoneFmt, moneyShort, money, parseMoney, html, raw, toCsv } from '../web/js/util.js';
 import { slotStart } from '../web/js/util.js';
 
@@ -180,4 +180,11 @@ test('bản dùng thử: nhóm sản phẩm như thư mục', async () => {
   delete old.product_groups;
   storage.setItem('shophoa-demo-v1', JSON.stringify(old));
   assert.deepEqual(await createDemoBackend(storage).listGroups(), []);
+});
+
+test('giá vốn: theo công thức nếu có, không thì lấy giá tự nhập', () => {
+  const materials = [{ id: 1, cost: 15000 }, { id: 2, cost: 5000 }];
+  assert.equal(productCost({ components: [{ material_id: 1, qty: 20 }, { material_id: 2, qty: 2 }], cost: 99 }, materials), 310000);
+  assert.equal(productCost({ components: [], cost: 180000 }, materials), 180000);
+  assert.equal(productCost({ components: [], cost: null }, materials), 0);
 });
