@@ -104,7 +104,7 @@ export async function list({ el, query }) {
   const datePill = (key, label) => html`<button class="pill ${d === key ? 'on' : ''}" data-d="${key}">${label}</button>`;
   el.innerHTML = html`
     <header class="top" style="flex-direction: column; align-items: stretch; gap: 12px">
-      <h1>Đơn hàng</h1>
+      <div class="row"><h1>Đơn hàng</h1><a class="btn btn-sm btn-outline" href="#/don/moi?cu=1${day && day < t ? `&date=${day}` : ''}">+ Bổ sung đơn cũ</a></div>
       <label class="search">${raw(ICON.search)}<input type="search" id="q" placeholder="Tìm tên, SĐT, mã đơn…" aria-label="Tìm đơn" value="${query.q || ''}"></label>
       <div class="pills when">
         ${d === 'no' ? datePill('no', 'Đơn còn nợ') : ''}
@@ -125,7 +125,9 @@ export async function list({ el, query }) {
   const draw = (rows, showDate) => {
     listEl.innerHTML = rows.length
       ? rows.map((o) => orderCard(o, showDate).s).join('')
-      : html`<div class="card empty">Không có đơn nào.<br><a class="btn btn-outline" href="#/don/moi">+ Tạo đơn</a></div>`.s;
+      : html`<div class="card empty">Không có đơn nào.<br>${day && day < t
+        ? html`<a class="btn btn-outline" href="#/don/moi?cu=1&date=${day}">+ Bổ sung đơn ngày ${ddmm(day)}</a>`
+        : html`<a class="btn btn-outline" href="#/don/moi">+ Tạo đơn</a>`}</div>`.s;
   };
   const shown = () => (status ? orders.filter((o) => o.status === status) : orders);
   // Kỳ đã qua: đơn mới nhất lên đầu. Còn lại theo giờ giao.
@@ -160,7 +162,16 @@ export async function create({ el, query }) {
   const st = {
     phone: '', name: '', pickup: false, other: false, rName: '', rPhone: '', address: '', anonymous: false,
     date: t, slot: '', time: '', items: [], card: '', note: '', ship: defaultShip, discount: 0, pay: 'none', handover: false,
+    past: false,
   };
+  // Bổ sung đơn đã bán ngày trước: chọn được ngày đã qua, lưu là "Đã giao", mặc định đã trả tiền mặt.
+  const setPast = (on, date) => {
+    st.past = on;
+    st.date = on ? (date && date < t ? date : addDays(t, -1)) : t;
+    if (on && st.pay === 'none') st.pay = 'tien_mat';
+    if (on) st.handover = false;
+  };
+  if (query.cu === '1') setPast(true, /^\d{4}-\d{2}-\d{2}$/.test(query.date || '') ? query.date : null);
   // Tạo đơn cho khách có sẵn, hoặc đặt lại một đơn cũ.
   if (query.from) {
     const old = await db.getOrder(Number(query.from));
@@ -184,7 +195,7 @@ export async function create({ el, query }) {
   el.innerHTML = html`
     <header class="top-nav">
       <a class="back" href="#/don">Hủy</a>
-      <h1>${query.from ? 'Đặt lại đơn' : 'Tạo đơn mới'}</h1>
+      <h1 id="form-title">${query.from ? 'Đặt lại đơn' : 'Tạo đơn mới'}</h1>
       <span style="width: 52px"></span>
     </header>
     <form class="page" id="f" novalidate>
@@ -214,7 +225,8 @@ export async function create({ el, query }) {
       </section>
 
       <section class="card stack" id="when">
-        <h2>Thời gian giao</h2>
+        <h2 id="when-title">Thời gian giao</h2>
+        <div class="hint hidden" id="past-note">Đơn của ngày trước được lưu là <b>Đã giao</b> và tính vào doanh thu của ngày đó.</div>
         <div class="opts" id="date-opts"></div>
         <div class="opts" id="slot-opts"></div>
         <input class="inp hidden" type="time" name="time" id="time" aria-label="Giờ giao cụ thể" value="${st.time}">
@@ -264,17 +276,24 @@ export async function create({ el, query }) {
     $('#delivery-fields').classList.toggle('hidden', st.pickup);
     $('#ship-row').classList.toggle('hidden', st.pickup);
     $('#recipient').classList.toggle('hidden', !st.other);
-    $('#handover').classList.toggle('hidden', !st.pickup || st.date !== t);
-    $('#when').classList.toggle('hidden', st.pickup && st.handover && st.date === t);
+    $('#handover').classList.toggle('hidden', !st.pickup || st.date !== t || st.past);
+    $('#when').classList.toggle('hidden', st.pickup && st.handover && st.date === t && !st.past);
+    $('#form-title').textContent = st.past ? 'Bổ sung đơn cũ' : query.from ? 'Đặt lại đơn' : 'Tạo đơn mới';
+    $('#when-title').textContent = st.past ? 'Ngày bán' : 'Thời gian giao';
+    $('#past-note').classList.toggle('hidden', !st.past);
   }
   function drawWhen() {
-    const opts = [[t, 'Hôm nay'], [addDays(t, 1), 'Ngày mai'], [addDays(t, 2), dateShort(addDays(t, 2))]];
+    const opts = st.past
+      ? [[addDays(t, -1), 'Hôm qua'], [addDays(t, -2), 'Hôm kia'], [addDays(t, -3), dateShort(addDays(t, -3))]]
+      : [[t, 'Hôm nay'], [addDays(t, 1), 'Ngày mai'], [addDays(t, 2), dateShort(addDays(t, 2))]];
     const hol = nextHoliday(holidays, t, 30);
-    if (hol && hol.daysLeft > 2) opts.push([hol.date, `Lễ ${ddmm(hol.date)}`]);
+    if (!st.past && hol && hol.daysLeft > 2) opts.push([hol.date, `Lễ ${ddmm(hol.date)}`]);
     const isCustom = !opts.some(([d]) => d === st.date);
+    const range = st.past ? raw(`max="${addDays(t, -1)}"`) : raw(`min="${t}"`);
     $('#date-opts').innerHTML = html`
       ${opts.map(([d, label]) => html`<button type="button" class="opt ${st.date === d ? 'on' : ''}" data-date="${d}">${label}</button>`)}
-      <label class="opt ${isCustom ? 'on' : ''}">${isCustom ? dateShort(st.date) : 'Chọn ngày'}<input type="date" id="date-pick" value="${st.date}" min="${t}" aria-label="Chọn ngày giao"></label>`.s;
+      <label class="opt ${isCustom ? 'on' : ''}">${isCustom ? dateShort(st.date) : 'Chọn ngày'}<input type="date" id="date-pick" value="${st.date}" ${range} aria-label="${st.past ? 'Chọn ngày bán' : 'Chọn ngày giao'}"></label>
+      <button type="button" class="link-btn" id="past-toggle" style="grid-column: 1 / -1; justify-self: start">${st.past ? '← Đơn mới (giao hôm nay hoặc sau)' : 'Đơn đã bán ngày trước? Bổ sung đơn cũ'}</button>`.s;
     const custom = st.slot === 'time';
     $('#slot-opts').innerHTML = html`
       ${SLOTS.map((s) => html`<button type="button" class="opt ${st.slot === s ? 'on' : ''}" data-slot="${s}">${s}</button>`)}
@@ -322,6 +341,7 @@ export async function create({ el, query }) {
   el.addEventListener('click', (e) => {
     const b = e.target.closest('button');
     if (!b) return;
+    if (b.id === 'past-toggle') { setPast(!st.past); drawWhen(); drawMode(); drawItems(); return; }
     if (b.dataset.pickup) { st.pickup = b.dataset.pickup === '1'; if (!st.pickup) st.handover = false; drawMode(); drawTotals(); }
     else if (b.dataset.date) { st.date = b.dataset.date; drawWhen(); drawMode(); drawItems(); }
     else if ('slot' in b.dataset) { st.slot = b.dataset.slot; drawWhen(); }
@@ -334,7 +354,10 @@ export async function create({ el, query }) {
     }
   });
   el.addEventListener('change', (e) => {
-    if (e.target.id === 'date-pick' && e.target.value) { st.date = e.target.value; drawWhen(); drawMode(); drawItems(); }
+    if (e.target.id === 'date-pick' && e.target.value) {
+      if (st.past && e.target.value >= t) { toast('Đơn cũ phải là ngày trước hôm nay', 'error'); drawWhen(); return; }
+      st.date = e.target.value; drawWhen(); drawMode(); drawItems();
+    }
   });
   $('#add-item').onclick = () => pickProduct(activeProducts, st.date, holidays, (it) => {
     const same = it.product_id != null && st.items.find((x) => x.product_id === it.product_id);
@@ -345,7 +368,7 @@ export async function create({ el, query }) {
 
   $('#save').onclick = async () => {
     const btn = $('#save');
-    const counterSale = st.pickup && st.handover && st.date === t;
+    const counterSale = !st.past && st.pickup && st.handover && st.date === t;
     const slot = counterSale ? '' : st.slot === 'time' ? st.time : st.slot;
     if (st.items.length === 0) return toast('Chưa chọn sản phẩm', 'error');
     btn.disabled = true;
@@ -356,10 +379,10 @@ export async function create({ el, query }) {
         address: st.pickup ? '' : st.address, anonymous: st.anonymous, delivery_date: st.date, delivery_slot: slot,
         card_message: st.card, note: st.note, ship_fee: st.pickup ? 0 : st.ship, discount: st.discount,
         paid: st.pay !== 'none', payment_method: st.pay === 'none' ? 'tien_mat' : st.pay,
-        status: counterSale ? 'da_giao' : 'moi',
+        status: counterSale || st.past ? 'da_giao' : 'moi',
         items: st.items.map((it) => (it.product_id != null ? { product_id: it.product_id, qty: it.qty } : { name: it.name, price: it.price, qty: it.qty })),
       });
-      toast(counterSale ? 'Đã bán xong' : 'Đã lưu đơn');
+      toast(st.past ? `Đã bổ sung đơn ngày ${ddmm(st.date)}` : counterSale ? 'Đã bán xong' : 'Đã lưu đơn');
       location.replace(`#/don/${id}`);
     } catch (err) {
       toast(errMsg(err), 'error');

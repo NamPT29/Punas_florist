@@ -157,6 +157,28 @@ try {
     assert.ok(await page.locator('.order-card').count() >= 2);
   });
 
+  await step('Bổ sung đơn đã bán ngày trước', async () => {
+    const day = addDays(today(), -2);
+    await page.goto(`${admin}#/don`);
+    await page.getByRole('link', { name: '+ Bổ sung đơn cũ' }).click();
+    await page.getByRole('heading', { name: 'Bổ sung đơn cũ' }).waitFor();
+    assert.equal(await page.locator('#date-pick').getAttribute('max'), addDays(today(), -1), 'chỉ chọn được ngày đã qua');
+    await page.locator('input[name=phone]').fill('0966555444');
+    await page.locator('input[name=name]').fill('Chị Hoa');
+    await page.locator('[data-pickup="1"]').click();
+    await page.locator(`[data-date="${day}"]`).click();
+    await page.getByRole('button', { name: '+ Thêm sản phẩm' }).click();
+    await page.locator('#pq').fill('cuc tana');
+    await page.locator('#pq').press('Enter');
+    assert.equal(await page.locator('[data-pay=tien_mat].on').count(), 1, 'mặc định đã trả tiền mặt');
+    await page.locator('#save').click();
+    await toastSays(`Đã bổ sung đơn ngày ${ddmm(day)}`);
+    await page.getByText('Đã thanh toán · Tiền mặt').waitFor();
+    // Xem lại ngày đó trong danh sách đơn.
+    await page.goto(`${admin}#/don?d=${day}`);
+    await page.locator('.order-card', { hasText: 'Bó cúc tana mini' }).locator('.chip', { hasText: 'Đã giao' }).waitFor();
+  });
+
   await step('Kho: nhập hoa, hủy héo', async () => {
     await page.locator('#tabs a[href="#/kho"]').click();
     await page.getByRole('heading', { name: 'Kho hoa' }).waitFor();

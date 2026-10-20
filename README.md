@@ -14,6 +14,7 @@ Giao diện tự đổi theo màn hình:
   - Tạo đơn nhanh theo SĐT, tự nhận ra khách cũ.
   - Người nhận riêng, khung giờ giao, lời thiệp, giảm giá, phí ship.
   - Bán tại quầy, đặt lại đơn cũ.
+  - **Bổ sung đơn cũ:** nhập lại đơn đã bán những ngày trước (nút "+ Bổ sung đơn cũ" ở trang Đơn hàng). Đơn lưu là Đã giao và tính vào doanh thu đúng ngày đó.
   - Trạng thái Mới → Đang cắm → Đang giao → Đã giao, hoặc Hủy.
   - Chụp ảnh bó hoa để gửi khách, gửi thông tin cho shipper, in phiếu.
 - **Kho hoa:**
