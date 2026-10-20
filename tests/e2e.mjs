@@ -134,6 +134,13 @@ try {
     await page.goto(`${admin}#/don`);
     await page.getByRole('heading', { name: 'Đơn hàng' }).waitFor();
     await shot('04-don-hang');
+    // Bấm giữa nút "Chọn ngày" (không phải biểu tượng lịch) vẫn mở lịch.
+    await page.evaluate(() => {
+      window.pickerOpened = 0;
+      HTMLInputElement.prototype.showPicker = function showPicker() { window.pickerOpened += 1; };
+    });
+    await page.locator('label.pill', { hasText: 'Chọn ngày' }).click();
+    assert.equal(await page.evaluate(() => window.pickerOpened), 1, 'mở lịch khi bấm "Chọn ngày"');
     // Chọn kỳ có sẵn.
     await page.locator('#pick-range').click();
     await page.locator('dialog [data-from]', { hasText: '7 ngày tới' }).click();

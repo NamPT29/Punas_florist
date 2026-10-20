@@ -163,6 +163,13 @@ async function start() {
     toast(errMsg(e), 'error');
   }
   window.addEventListener('hashchange', () => refresh());
+  // Chrome trên máy tính chỉ mở lịch khi bấm đúng biểu tượng lịch; các nút "Chọn ngày" đặt ô ngày ẩn đè lên
+  // nên biểu tượng không thấy được. Bấm vào bất kỳ đâu trên ô ngày là mở lịch.
+  document.addEventListener('click', (e) => {
+    const input = e.target;
+    if (!(input instanceof HTMLInputElement) || input.type !== 'date' || typeof input.showPicker !== 'function') return;
+    try { input.showPicker(); } catch { /* trình duyệt không cho mở: vẫn gõ hoặc bấm biểu tượng được */ }
+  });
   await refresh();
   if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
     navigator.serviceWorker.register('sw.js').catch(() => {});
