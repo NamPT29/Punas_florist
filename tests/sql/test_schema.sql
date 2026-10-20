@@ -156,10 +156,17 @@ reset role;
 -- 4. Trang cho khách: ai cũng xem được, chỉ sản phẩm đang bán, không lộ giá vốn/công thức.
 update products set description = 'Hồng Đà Lạt, baby trắng';
 select save_product('{"name":"Mẫu ẩn","price":1,"active":false}');
+-- Nhóm chỉ có mẫu ngừng bán thì không hiện ra trang khách.
+insert into product_groups (name) values ('Nhóm ẩn');
+update products set group_id = (select id from product_groups where name = 'Nhóm ẩn') where name = 'Mẫu ẩn';
+update products set group_id = (select id from product_groups where name = 'Hoa hồng') where name <> 'Mẫu ẩn';
 reset role;
 set role anon;
 select pg_temp.eq(jsonb_array_length(public_catalog()->'products'), 1, 'chỉ sản phẩm đang bán');
 select pg_temp.eq(public_catalog()->'products'->0->>'description', 'Hồng Đà Lạt, baby trắng', 'mô tả');
+select pg_temp.eq(public_catalog()->'groups'->0->>'name', 'Hoa hồng', 'bộ sưu tập');
+select pg_temp.eq(jsonb_array_length(public_catalog()->'groups'), 1, 'không hiện nhóm chỉ có mẫu ngừng bán');
+select pg_temp.eq(public_catalog()->'products'->0->'group_id', public_catalog()->'groups'->0->'id', 'mẫu thuộc nhóm');
 select pg_temp.eq(public_catalog()->'shop'->>'shop_name', 'Tiệm Hoa Mộc', 'tên shop');
 select pg_temp.eq(public_catalog()->'shop' ? 'cover_url' and public_catalog()->'shop' ? 'slogan', true, 'ảnh bìa và khẩu hiệu');
 select pg_temp.eq(public_catalog()::text ~ '(cost|components|stock|min_stock)', false, 'không lộ dữ liệu nội bộ');

@@ -255,10 +255,15 @@ try {
     assert.ok(all >= 3);
     assert.equal(await page.getByText(/giá vốn|tồn kho/i).count(), 0);
     await shot('10-trang-khach');
-    await page.locator('[data-cat="Khai trương"]').click();
+    // Mẫu xếp theo bộ sưu tập (nhóm trong trang quản lý), theo tên.
+    assert.deepEqual(await page.locator('.coll-head h3').allTextContents(), ['Giỏ hoa', 'Hoa hồng', 'Hoa hồng Plume']);
+    await page.locator('#coll-nav a', { hasText: 'Hoa hồng Plume' }).click();
+    await page.locator('#coll-nav a.on', { hasText: 'Hoa hồng Plume' }).waitFor();
+    await page.locator('#occ').selectOption('Khai trương');
     assert.ok(await page.locator('.p-card').count() < all);
-    await page.locator('[data-cat=""]').click();
+    await page.locator('#occ').selectOption('');
     await page.locator('.p-card', { hasText: 'Bó hồng đỏ' }).click();
+    await page.getByText('Bộ sưu tập · Hoa hồng').waitFor();
     await page.locator('dialog .detail-price').waitFor();
     await page.getByText('Bó hoa thử nghiệm cho trang khách').waitFor();
     assert.ok((await page.locator('#order-zalo').getAttribute('href')).startsWith('https://zalo.me/'));
@@ -312,7 +317,7 @@ try {
     await page.locator('.p-card').first().waitFor();
     assert.equal(await page.locator('.dock').isVisible(), false, 'laptop: không cần thanh nút ở đáy');
     assert.ok(await page.locator('.topbar .contacts').isVisible(), 'laptop: liên hệ trên thanh đen');
-    assert.ok(await page.locator('.catnav').isVisible(), 'laptop: thanh danh mục');
+    assert.ok(await page.locator('#coll-nav').isVisible(), 'laptop: thanh chọn bộ sưu tập');
     await shot('26-laptop-trang-khach');
     await page.locator('.p-card').first().click();
     await page.locator('dialog.sheet.wide .detail-price').waitFor();

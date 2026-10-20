@@ -155,7 +155,7 @@ test('trang cho khách: chỉ mẫu đang bán, không lộ giá vốn / công t
   assert.ok(!products.some((p) => p.id === first.id));
   assert.ok(products.length > 0);
   for (const p of products) {
-    assert.deepEqual(Object.keys(p).sort(), ['categories', 'description', 'holiday_price', 'id', 'name', 'photo_url', 'price']);
+    assert.deepEqual(Object.keys(p).sort(), ['categories', 'description', 'group_id', 'holiday_price', 'id', 'name', 'photo_url', 'price']);
   }
 });
 

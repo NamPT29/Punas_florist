@@ -172,10 +172,12 @@ try {
   });
 
   await step('Trang cho khách: không cần đăng nhập, không lộ dữ liệu nội bộ', async () => {
-    const { shop, products } = await anon.publicCatalog();
+    const { shop, products, groups } = await anon.publicCatalog();
     assert.equal(shop.shop_name, 'Tiệm Hoa Thử');
     assert.equal(shop.slogan, 'Hoa tươi mỗi ngày');
-    assert.deepEqual(Object.keys(products[0]).sort(), ['categories', 'description', 'holiday_price', 'id', 'name', 'photo_url', 'price']);
+    assert.deepEqual(Object.keys(products[0]).sort(), ['categories', 'description', 'group_id', 'holiday_price', 'id', 'name', 'photo_url', 'price']);
+    assert.deepEqual(groups.map((g) => g.name), ['Hoa hồng Đà Lạt']);
+    assert.equal(products.find((p) => p.id === product.id).group_id, groups[0].id);
   });
 
   await step('Tổng quan, báo cáo, sao lưu chạy trên dữ liệu thật', async () => {

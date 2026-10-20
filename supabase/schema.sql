@@ -447,8 +447,8 @@ begin
   return v_id;
 end $$;
 
--- Trang cho khách (không cần đăng nhập): chỉ trả thông tin shop và sản phẩm đang bán,
--- không có giá vốn, công thức, tồn kho.
+-- Trang cho khách (không cần đăng nhập): chỉ trả thông tin shop, sản phẩm đang bán và các nhóm
+-- (bộ sưu tập) có sản phẩm đang bán; không có giá vốn, công thức, tồn kho.
 create or replace function public_catalog() returns jsonb
 language sql stable security definer set search_path = public as $$
   select jsonb_build_object(
@@ -456,9 +456,11 @@ language sql stable security definer set search_path = public as $$
                                        'intro', intro, 'open_hours', open_hours, 'holidays', holidays,
                                        'slogan', slogan, 'cover_url', cover_url)
              from settings where id = 1),
+    'groups', coalesce((select jsonb_agg(jsonb_build_object('id', g.id, 'name', g.name, 'photo_url', g.photo_url) order by g.name)
+                from product_groups g where exists (select 1 from products p where p.group_id = g.id and p.active)), '[]'::jsonb),
     'products', coalesce((select jsonb_agg(jsonb_build_object(
                   'id', id, 'name', name, 'description', description, 'categories', categories,
-                  'price', price, 'holiday_price', holiday_price, 'photo_url', photo_url) order by name)
+                  'price', price, 'holiday_price', holiday_price, 'photo_url', photo_url, 'group_id', group_id) order by name)
                 from products where active), '[]'::jsonb));
 $$;
 revoke all on function public_catalog() from public;

@@ -193,9 +193,12 @@ export function createDemoBackend(storage = globalThis.localStorage) {
       return clone({
         shop: { shop_name, phone, zalo: zalo || '', address, intro: intro || '', open_hours: open_hours || '', holidays,
           slogan: slogan || '', cover_url: cover_url || null },
+        // Bộ sưu tập = nhóm có mẫu đang bán, xếp theo tên như trang quản lý.
+        groups: s.product_groups.filter((g) => s.products.some((p) => p.active && p.group_id === g.id))
+          .sort((a, b) => a.name.localeCompare(b.name, 'vi')).map(({ id: gid, name, photo_url }) => ({ id: gid, name, photo_url })),
         products: s.products.filter((p) => p.active).sort((a, b) => a.name.localeCompare(b.name, 'vi'))
-          .map(({ id: pid, name, description, categories, price, holiday_price, photo_url }) =>
-            ({ id: pid, name, description: description || '', categories, price, holiday_price, photo_url })),
+          .map(({ id: pid, name, description, categories, price, holiday_price, photo_url, group_id }) =>
+            ({ id: pid, name, description: description || '', categories, price, holiday_price, photo_url, group_id: group_id ?? null })),
       });
     },
 

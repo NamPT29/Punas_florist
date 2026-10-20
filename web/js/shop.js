@@ -1,6 +1,6 @@
-// Trang cho khách: ảnh bìa lớn, danh mục, mẫu hoa, đặt qua Zalo hoặc gọi điện. Không cần đăng nhập.
+// Trang cho khách: ảnh bìa lớn, mẫu hoa xếp theo bộ sưu tập (kiểu tạp chí), đặt qua Zalo hoặc gọi điện. Không cần đăng nhập.
 import { loadBackend } from './backend.js';
-import { html, raw, ICON, money, toast, errMsg, phoneDigits, phoneFmt, today, ddmm, sheet } from './util.js';
+import { html, raw, ICON, money, moneyShort, fold, toast, errMsg, phoneDigits, phoneFmt, today, ddmm, sheet } from './util.js';
 import { nextHoliday, priceOf } from './stats.js';
 
 const FLOWER = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="9" r="2.2"/><path d="M12 6.8C11 3.5 13 3.5 12 6.8M14.2 9c3.3-1 3.3 1 0 0M9.8 9c-3.3-1-3.3 1 0 0M12 11.2c-1 3.3 1 3.3 0 0M12 13v8M12 17c2-2 4-2 5-1.5M12 19c-2-2-4-2-5-1.5"/></svg>';
@@ -28,7 +28,9 @@ const productImage = (p, cls) => (p.photo_url
   ? html`<img class="${cls}" src="${p.photo_url}" alt="${p.name}" loading="lazy">`
   : html`<div class="${cls} ph tint${Number(p.id) % 4}" role="img" aria-label="${p.name}">${raw(FLOWER)}</div>`);
 
-function render(root, { shop, products }) {
+const CHEVRON = '<svg class="occ-chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>';
+
+function render(root, { shop, products, groups = [] }) {
   const t = today();
   const phone = phoneDigits(shop.phone);
   const zalo = phoneDigits(shop.zalo) || phone;
@@ -40,14 +42,29 @@ function render(root, { shop, products }) {
   const catCount = new Map();
   for (const c of products.flatMap((p) => p.categories || [])) catCount.set(c, (catCount.get(c) || 0) + 1);
   const cats = [...catCount.keys()].sort((a, b) => catCount.get(b) - catCount.get(a) || a.localeCompare(b, 'vi'));
-  const st = { cat: '', q: '' };
+  const st = { occ: '', q: '' };
+  const priceNow = (p) => priceOf(p, t, shop.holidays);
   document.title = `${shop.shop_name} · Mẫu hoa & bảng giá`;
+
+  // Bộ sưu tập = nhóm mẫu chủ shop tạo (giữ thứ tự), trong nhóm xếp giá tăng dần.
+  // Mẫu chưa xếp nhóm gom vào "Mẫu khác"; shop chưa có nhóm nào thì hiện một lưới duy nhất.
+  const byPrice = (list) => [...list].sort((a, b) => priceNow(a) - priceNow(b) || a.name.localeCompare(b.name, 'vi'));
+  const groupIds = new Set(groups.map((g) => String(g.id)));
+  let colls = groups
+    .map((g) => ({ key: `bst-${g.id}`, name: g.name, items: byPrice(products.filter((p) => p.group_id != null && String(p.group_id) === String(g.id))) }))
+    .filter((c) => c.items.length);
+  const rest = products.filter((p) => p.group_id == null || !groupIds.has(String(p.group_id)));
+  if (colls.length && rest.length) colls.push({ key: 'bst-khac', name: 'Mẫu khác', items: byPrice(rest) });
+  const grouped = colls.length > 0;
+  if (!grouped) colls = [{ key: 'bst-tat-ca', name: '', items: products }];
+  const groupOf = new Map(grouped ? colls.flatMap((c) => c.items.map((p) => [p.id, c.name])) : []);
 
   const note = (p) => (holiday && holiday.daysLeft > 0 && p.holiday_price != null && p.holiday_price !== p.price
     ? `Dịp ${ddmm(holiday.date)}: ${money(p.holiday_price)}` : '');
   const zaloBtn = (cls, label) => zaloUrl
     && html`<a class="btn ${cls}" href="${zaloUrl}" target="_blank" rel="noopener" data-zalo>${raw(ICON.chat)}${label}</a>`;
   const callBtn = (cls, label) => phone && html`<a class="btn ${cls}" href="tel:${phone}">${raw(ICON.phone)}${label}</a>`;
+  const summary = (n) => (grouped ? `${n} mẫu · ${colls.length} bộ sưu tập` : `${n} mẫu`);
 
   root.innerHTML = html`
     <div class="topbar"><div class="wrap">
@@ -57,11 +74,6 @@ function render(root, { shop, products }) {
         ${zaloUrl && html`<a href="${zaloUrl}" target="_blank" rel="noopener" data-zalo>${raw(ICON.chat)}<span>Zalo</span></a>`}
       </span>
     </div></div>
-    ${cats.length > 0 && html`
-      <nav class="catnav" aria-label="Danh mục hoa"><div class="wrap">
-        <button class="on" data-cat="">Tất cả</button>
-        ${cats.map((c) => html`<button data-cat="${c}">${c}</button>`)}
-      </div></nav>`}
 
     <header class="hero ${shop.cover_url ? 'has-photo' : 'no-photo'}">
       ${shop.cover_url ? html`<img class="hero-bg" src="${shop.cover_url}" alt="" fetchpriority="high">` : raw(DECO)}
@@ -82,22 +94,34 @@ function render(root, { shop, products }) {
 
     <main class="wrap">
       ${holiday && html`
-        <div class="card rose season">
+        <div class="season">
           <div><b>${holiday.daysLeft === 0 ? `Hôm nay là ${ddmm(holiday.date)}` : `Đặt trước hoa ${ddmm(holiday.date)}`}</b>
-            <div class="small" style="color: #6B4552">${holiday.daysLeft === 0 ? 'Shop vẫn nhận đơn giao trong ngày.' : `Còn ${holiday.daysLeft} ngày. Đặt sớm để giữ mẫu và giờ giao.`}</div></div>
+            <span>${holiday.daysLeft === 0 ? 'Shop vẫn nhận đơn giao trong ngày.' : `Còn ${holiday.daysLeft} ngày. Đặt sớm để giữ mẫu và giờ giao.`}</span></div>
           ${zaloBtn('btn-primary btn-sm', 'Đặt ngay')}
         </div>`}
 
-      <section class="steps" aria-label="Cách đặt hoa">
-        ${STEPS.map(([title, text], i) => html`<div class="step"><div class="step-no">0${i + 1}</div><b>${title}</b><p>${text}</p></div>`)}
-      </section>
-
       <section class="catalog" id="mau-hoa" aria-labelledby="cat-title">
         <div class="catalog-head">
-          <div><div class="kicker">Bộ sưu tập</div><h2 id="cat-title">Mẫu hoa</h2></div>
-          ${products.length > 6 && html`<label class="search">${raw(ICON.search)}<input type="search" id="q" placeholder="Tìm mẫu hoa…" aria-label="Tìm mẫu hoa"></label>`}
+          <div>
+            <div class="kicker">Bộ sưu tập</div>
+            <h2 id="cat-title">Mẫu hoa</h2>
+            <p class="catalog-sub" id="cat-sub">${summary(products.length)}</p>
+          </div>
+          ${(cats.length > 0 || products.length > 6) && html`<div class="catalog-tools">
+            ${cats.length > 0 && html`<label class="occ"><span class="occ-lab">Dịp</span>
+              <select id="occ" aria-label="Lọc theo dịp tặng"><option value="">Tất cả</option>${cats.map((c) => html`<option value="${c}">${c}</option>`)}</select>${raw(CHEVRON)}</label>`}
+            ${products.length > 6 && html`<label class="search">${raw(ICON.search)}<input type="search" id="q" placeholder="Tìm mẫu hoa…" aria-label="Tìm mẫu hoa"></label>`}
+          </div>`}
         </div>
-        <div class="grid-products" id="grid"></div>
+        ${grouped && html`<nav class="coll-nav" id="coll-nav" aria-label="Chọn bộ sưu tập"></nav>`}
+        <div id="colls"></div>
+      </section>
+
+      <section class="howto" aria-labelledby="howto-title">
+        <h2 id="howto-title">Cách đặt hoa</h2>
+        <ol class="steps">
+          ${STEPS.map(([title, text], i) => html`<li class="step"><span class="step-no">0${i + 1}</span><span><b>${title}</b><span class="step-text">${text}</span></span></li>`)}
+        </ol>
       </section>
     </main>
 
@@ -122,21 +146,63 @@ function render(root, { shop, products }) {
     </footer>
     ${(zaloUrl || phone) && html`<div class="dock"><div>${zaloBtn('btn-primary', 'Nhắn Zalo')}${callBtn('', 'Gọi ngay')}</div></div>`}`.s;
 
-  const grid = root.querySelector('#grid');
-  function drawGrid() {
-    const q = st.q.toLowerCase();
-    const shown = products.filter((p) => (!st.cat || p.categories?.includes(st.cat))
-      && (!q || `${p.name} ${p.description}`.toLowerCase().includes(q)));
-    grid.innerHTML = shown.length ? shown.map((p) => html`
-      <button class="p-card" data-pid="${p.id}">
-        <span class="p-media">${productImage(p, 'p-img')}</span>
-        <span class="p-body">
-          <span class="p-name">${p.name}</span>
-          <span class="p-price">${money(priceOf(p, t, shop.holidays))}</span>
-          ${note(p) && html`<span class="p-note">${note(p)}</span>`}
-        </span>
-      </button>`.s).join('')
-      : html`<div class="card empty" style="grid-column: 1 / -1">${products.length ? 'Không có mẫu phù hợp.' : 'Shop đang cập nhật mẫu hoa. Nhắn Zalo để được tư vấn nhé!'}</div>`.s;
+  const body = root.querySelector('#colls');
+  const nav = root.querySelector('#coll-nav');
+  const card = (p) => html`
+    <button class="p-card" data-pid="${p.id}">
+      <span class="p-media">${productImage(p, 'p-img')}</span>
+      <span class="p-body">
+        <span class="p-name">${p.name}</span>
+        <span class="p-foot"><span class="p-price">${money(priceNow(p))}</span>
+        ${note(p) && html`<span class="p-note">${note(p)}</span>`}</span>
+      </span>
+    </button>`;
+
+  let spy;
+  function setActive(key) {
+    if (!nav) return;
+    for (const a of nav.querySelectorAll('a')) {
+      const on = a.dataset.coll === key;
+      a.classList.toggle('on', on);
+      if (on) {
+        a.setAttribute('aria-current', 'true');
+        if (nav.scrollWidth > nav.clientWidth) nav.scrollTo({ left: Math.max(0, a.offsetLeft - 20), behavior: 'smooth' });
+      } else a.removeAttribute('aria-current');
+    }
+  }
+
+  function draw() {
+    const q = fold(st.q);
+    const match = (p) => (!st.occ || p.categories?.includes(st.occ)) && (!q || fold(`${p.name} ${p.description}`).includes(q));
+    const shown = colls.map((c) => ({ ...c, items: c.items.filter(match) })).filter((c) => c.items.length);
+    const n = shown.reduce((s, c) => s + c.items.length, 0);
+    root.querySelector('#cat-sub').textContent = st.occ || q ? `${st.occ ? `${st.occ} · ` : ''}${n} mẫu phù hợp` : summary(n);
+    body.innerHTML = shown.length ? shown.map((c) => html`
+      <section class="coll${c.name ? '' : ' plain'}" id="${c.key}" ${raw(c.name ? `aria-labelledby="${c.key}-t"` : 'aria-label="Mẫu hoa"')}>
+        <div class="grid-products">
+          ${c.name && html`<header class="coll-head">
+            <h3 id="${c.key}-t">${c.name}</h3>
+            <span class="coll-meta">${c.items.length} mẫu · từ ${moneyShort(Math.min(...c.items.map(priceNow)))}</span>
+          </header>`}
+          ${c.items.map(card)}
+        </div>
+      </section>`.s).join('')
+      : html`<div class="empty-note">${products.length
+        ? html`Không có mẫu phù hợp. <button class="linkish" data-reset>Xem tất cả mẫu</button>`
+        : 'Shop đang cập nhật mẫu hoa. Nhắn Zalo để được tư vấn nhé!'}</div>`.s;
+
+    if (nav) {
+      nav.innerHTML = shown.filter((c) => c.name).map((c) => html`<a href="#${c.key}" data-coll="${c.key}">${c.name}</a>`.s).join('');
+      nav.hidden = shown.length < 2;
+      spy?.disconnect();
+      if (shown.length) setActive(shown[0].key);
+      if ('IntersectionObserver' in window) {
+        spy = new IntersectionObserver((entries) => {
+          for (const en of entries) if (en.isIntersecting) setActive(en.target.id);
+        }, { rootMargin: '-25% 0px -65% 0px' });
+        body.querySelectorAll('.coll').forEach((el) => spy.observe(el));
+      }
+    }
   }
 
   // Zalo không cho điền sẵn tin nhắn qua link: chép sẵn nội dung để khách dán vào.
@@ -144,29 +210,37 @@ function render(root, { shop, products }) {
     navigator.clipboard?.writeText(text).then(() => toast('Đã chép tên mẫu hoa, dán vào Zalo để nhắn shop'), () => {});
   };
   root.addEventListener('click', (e) => {
-    const card = e.target.closest('[data-pid]');
-    if (card) { openDetail(products.find((p) => String(p.id) === card.dataset.pid)); return; }
-    const cat = e.target.closest('[data-cat]');
-    if (cat) {
-      st.cat = cat.dataset.cat;
-      root.querySelectorAll('[data-cat]').forEach((b) => b.classList.toggle('on', b === cat));
-      root.querySelector('#cat-title').textContent = st.cat || 'Mẫu hoa';
-      drawGrid();
-      root.querySelector('#mau-hoa').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    const pc = e.target.closest('[data-pid]');
+    if (pc) { openDetail(products.find((p) => String(p.id) === pc.dataset.pid)); return; }
+    const link = e.target.closest('[data-coll]');
+    if (link) {
+      e.preventDefault();
+      setActive(link.dataset.coll);
+      root.querySelector(`#${link.dataset.coll}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+    if (e.target.closest('[data-reset]')) {
+      st.occ = ''; st.q = '';
+      const occ = root.querySelector('#occ'); if (occ) occ.value = '';
+      const qi = root.querySelector('#q'); if (qi) qi.value = '';
+      draw();
       return;
     }
     if (e.target.closest('[data-zalo]')) copyOrder(`Chào ${shop.shop_name}, mình muốn đặt hoa.`);
   });
-  root.querySelector('#q')?.addEventListener('input', (e) => { st.q = e.target.value.trim(); drawGrid(); });
+  root.querySelector('#occ')?.addEventListener('change', (e) => { st.occ = e.target.value; draw(); });
+  root.querySelector('#q')?.addEventListener('input', (e) => { st.q = e.target.value.trim(); draw(); });
 
   function openDetail(p) {
-    const price = priceOf(p, t, shop.holidays);
+    const price = priceNow(p);
+    const gname = groupOf.get(p.id);
     sheet({
       title: p.name,
       wide: true,
       body: html`<div class="detail-layout">
-        ${productImage(p, 'detail-img')}
+        <div class="detail-frame">${productImage(p, 'detail-img')}</div>
         <div class="stack detail-info">
+        ${gname && html`<div class="kicker">Bộ sưu tập · ${gname}</div>`}
         ${p.categories?.length ? html`<div class="row" style="justify-content: flex-start; flex-wrap: wrap; gap: 6px">${p.categories.map((c) => html`<span class="chip c-rose">${c}</span>`)}</div>` : ''}
         <div class="detail-price">${money(price)}</div>
         ${note(p) && html`<div class="p-note" style="font-size: 13px">${note(p)}</div>`}
@@ -193,7 +267,7 @@ function render(root, { shop, products }) {
     document.body.classList.add('scrolled');
   }
 
-  drawGrid();
+  draw();
 }
 
 async function start() {
