@@ -15,7 +15,7 @@ function seed() {
       intro: 'Hoa tươi mỗi ngày từ Đà Lạt. Nhận bó hoa, giỏ hoa, kệ khai trương, giao nhanh nội thành.',
       open_hours: '7:00 – 21:00 hằng ngày', slogan: 'Hoa tươi cho mọi khoảnh khắc', cover_url: null, default_ship_fee: 30000,
       holidays: ['02-14', '03-08', '10-20', '11-20', '12-24'] },
-    materials: [], products: [], customers: [], orders: [], stock_moves: [], expenses: [],
+    materials: [], product_groups: [], products: [], customers: [], orders: [], stock_moves: [], expenses: [],
   };
   const mat = (name, unit, stock, cost, min, life, kind = 'hoa', lastImport = addDays(t, -1)) => {
     const m = { id: ++s.seq, name, kind, unit, stock, cost, min_stock: min, shelf_life_days: life,
@@ -32,16 +32,19 @@ function seed() {
   const ribbon = mat('Ruy băng lụa', 'cuộn', 35, 12000, 10, 365, 'phu_lieu');
   const basket = mat('Giỏ mây', 'cái', 6, 40000, 3, 365, 'phu_lieu');
 
-  const prod = (name, cats, price, holiday, comps, description = '') => {
-    const p = { id: ++s.seq, name, description, categories: cats, price, holiday_price: holiday, photo_url: null, active: true,
+  const group = (name) => { const g = { id: ++s.seq, name, photo_url: null }; s.product_groups.push(g); return g.id; };
+  const roses = group('Hoa hồng');
+  const baskets = group('Giỏ hoa');
+  const prod = (name, cats, price, holiday, comps, description = '', group_id = null) => {
+    const p = { id: ++s.seq, name, group_id, description, categories: cats, price, holiday_price: holiday, photo_url: null, active: true,
       components: comps.map(([material_id, qty]) => ({ material_id, qty })) };
     s.products.push(p);
     return p;
   };
   const p1 = prod('Bó hồng đỏ 20 bông', ['Sinh nhật', 'Tình yêu'], 650000, 750000, [[rose, 20], [baby, 1], [paper, 2], [ribbon, 1]],
-    '20 hồng đỏ Đà Lạt, điểm baby trắng, gói giấy kraft và ruy băng lụa.');
+    '20 hồng đỏ Đà Lạt, điểm baby trắng, gói giấy kraft và ruy băng lụa.', roses);
   const p2 = prod('Giỏ hướng dương', ['Khai trương', 'Chúc mừng'], 520000, null, [[sun, 7], [daisy, 10], [basket, 1], [ribbon, 1]],
-    'Giỏ mây 7 bông hướng dương rực rỡ cùng cúc tana, hợp chúc mừng, khai trương.');
+    'Giỏ mây 7 bông hướng dương rực rỡ cùng cúc tana, hợp chúc mừng, khai trương.', baskets);
   const p3 = prod('Bó cẩm chướng hồng', ['Sinh nhật', 'Tặng mẹ'], 350000, 420000, [[carn, 15], [baby, 1], [paper, 2]],
     '15 cẩm chướng hồng dịu dàng, món quà ý nghĩa tặng mẹ, tặng cô.');
   prod('Bó cúc tana mini', ['Sinh nhật'], 180000, null, [[daisy, 15], [paper, 1], [ribbon, 1]],
@@ -88,6 +91,7 @@ export function createDemoBackend(storage = globalThis.localStorage) {
   let s;
   try { s = JSON.parse(storage.getItem(KEY)); } catch { s = null; }
   if (!s) s = seed();
+  s.product_groups ??= [];  // dữ liệu dùng thử tạo trước khi có nhóm sản phẩm
   const save = () => { try { storage.setItem(KEY, JSON.stringify(s)); } catch { fail('Bộ nhớ máy đã đầy (ảnh quá nhiều?)'); } };
   save();
 
@@ -205,6 +209,25 @@ export function createDemoBackend(storage = globalThis.localStorage) {
       row.id = id();
       s.products.push(row);
       return row.id;
+    }),
+
+    async listGroups() { return clone([...s.product_groups].sort((a, b) => a.name.localeCompare(b.name, 'vi'))); },
+    saveGroup: tx((g) => {
+      const name = g.name?.trim();
+      if (!name) fail('Chưa nhập tên nhóm');
+      if (s.product_groups.some((x) => x.name.toLowerCase() === name.toLowerCase() && x.id !== g.id)) fail('Đã có nhóm tên này');
+      const fields = { name, photo_url: g.photo_url || null };
+      if (g.id) { Object.assign(s.product_groups.find((x) => x.id === g.id) || fail('Không tìm thấy nhóm'), fields); return g.id; }
+      const row = { ...fields, id: id() };
+      s.product_groups.push(row);
+      return row.id;
+    }),
+    deleteGroup: tx((gid) => {
+      s.product_groups = s.product_groups.filter((g) => g.id !== gid);
+      for (const p of s.products) if (p.group_id === gid) p.group_id = null;
+    }),
+    moveProducts: tx((ids, groupId) => {
+      for (const p of s.products) if (ids.includes(p.id)) p.group_id = groupId;
     }),
 
     async listCustomers() { return clone(customerStats(s.customers, s.orders).sort((a, b) => b.total_spent - a.total_spent)); },

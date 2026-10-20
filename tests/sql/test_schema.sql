@@ -35,6 +35,7 @@ grant execute on function pg_temp.eq(anyelement, anyelement, text) to anon, auth
 -- 1. Khách vãng lai (anon) không đọc được gì.
 set role anon;
 select pg_temp.expect_error('select * from materials', '42501');
+select pg_temp.expect_error('select * from product_groups', '42501');
 select pg_temp.expect_error('select create_order(''{}''::jsonb)', '42501');
 reset role;
 
@@ -43,6 +44,7 @@ set role authenticated;
 set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000002';
 select pg_temp.eq((select count(*) from settings), 0::bigint, 'người lạ thấy settings');
 select pg_temp.expect_error('insert into materials (name) values (''x'')', '42501');
+select pg_temp.expect_error('insert into product_groups (name) values (''x'')', '42501');
 reset role;
 
 -- 3. Chủ shop.
@@ -67,6 +69,18 @@ select save_product(jsonb_build_object(
     jsonb_build_object('material_id', (select id from materials where name = 'Baby trắng'), 'qty', 1),
     jsonb_build_object('material_id', (select id from materials where name = 'Giấy kraft'), 'qty', 2))));
 select pg_temp.eq((select count(*) from product_components), 3::bigint, 'lưu công thức');
+
+-- Nhóm sản phẩm: lưu sản phẩm kèm nhóm, trùng tên (không phân biệt hoa thường), xóa nhóm giữ sản phẩm.
+insert into product_groups (name) values ('Hoa hồng');
+select pg_temp.expect_error('insert into product_groups (name) values (''HOA hồng'')', 'duplicate key');
+select save_product((select to_jsonb(p) || jsonb_build_object('group_id', (select id from product_groups),
+  'components', (select jsonb_agg(c) from product_components c where c.product_id = p.id)) from products p));
+select pg_temp.eq((select g.name from products p join product_groups g on g.id = p.group_id), 'Hoa hồng', 'sản phẩm vào nhóm');
+select pg_temp.eq((select count(*) from product_components), 3::bigint, 'lưu lại vẫn giữ công thức');
+insert into product_groups (name) values ('Xóa thử');
+update products set group_id = (select id from product_groups where name = 'Xóa thử');
+delete from product_groups where name = 'Xóa thử';
+select pg_temp.eq((select count(*) from products where group_id is null), 1::bigint, 'xóa nhóm, sản phẩm còn');
 
 -- Tạo đơn thường: chưa trừ kho.
 select create_order(jsonb_build_object(

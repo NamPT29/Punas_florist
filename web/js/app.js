@@ -20,6 +20,7 @@ const ROUTES = [
   [/^\/kho\/lich-su$/, stock.history, 'stock'],
   [/^\/san-pham$/, products.list, 'more'],
   [/^\/san-pham\/(moi|\d+)$/, products.edit, null],
+  [/^\/san-pham\/nhom\/(\d+)$/, products.group, 'more'],
   [/^\/khach$/, customers.list, 'more'],
   [/^\/khach\/(\d+)$/, customers.detail, 'more'],
   [/^\/thu-chi$/, finance.expenses, 'more'],

@@ -1,6 +1,6 @@
 // Kết nối Supabase. Mọi nghiệp vụ đụng tới kho/tiền chạy bằng hàm SQL (rpc) để luôn khớp.
 const ORDER_SELECT = '*, customer:customers(id,name,phone), items:order_items(id,product_id,name,price,qty)';
-const TABLES = ['settings', 'staff', 'materials', 'products', 'product_components', 'customers',
+const TABLES = ['settings', 'staff', 'materials', 'product_groups', 'products', 'product_components', 'customers',
   'orders', 'order_items', 'stock_moves', 'expenses'];
 
 /** createClient, clientOptions: chỉ dùng cho kiểm thử (tests/supabase-it) để chạy với PostgREST trên máy. */
@@ -86,6 +86,32 @@ export async function createSupabaseBackend(url, key, { createClient, clientOpti
       return rows.map(withComponents);
     },
     saveProduct: (p) => rpc('save_product', { p }),
+
+    async listGroups() {
+      try {
+        return await run(sb.from('product_groups').select('*').order('name'));
+      } catch (e) {
+        // Code mới đã lên mạng nhưng chưa chạy lại schema.sql: báo rõ cách sửa.
+        if (/schema cache|does not exist/.test(e.message)) {
+          throw new Error('Cơ sở dữ liệu chưa cập nhật: vào Supabase → SQL Editor, dán và chạy lại file supabase/schema.sql mới nhất.');
+        }
+        throw e;
+      }
+    },
+    async saveGroup(g) {
+      const fields = { name: g.name?.trim() || '', photo_url: g.photo_url || null };
+      if (!fields.name) throw new Error('Chưa nhập tên nhóm');
+      try {
+        if (g.id) { await run(sb.from('product_groups').update(fields).eq('id', g.id)); return g.id; }
+        return (await run(sb.from('product_groups').insert(fields).select('id').single())).id;
+      } catch (e) {
+        if (/duplicate key/.test(e.message)) throw new Error('Đã có nhóm tên này');
+        throw e;
+      }
+    },
+    deleteGroup: (gid) => run(sb.from('product_groups').delete().eq('id', gid)),
+    /** Chuyển nhiều sản phẩm vào một nhóm (groupId null: bỏ khỏi nhóm). */
+    moveProducts: (ids, groupId) => run(sb.from('products').update({ group_id: groupId }).in('id', ids)),
 
     listCustomers: () => all(() => sb.from('customer_stats').select('*').order('total_spent', { ascending: false })),
     getCustomer: (id) => run(sb.from('customer_stats').select('*').eq('id', id).single()),

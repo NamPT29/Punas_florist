@@ -158,3 +158,26 @@ test('trang cho khách: chỉ mẫu đang bán, không lộ giá vốn / công t
     assert.deepEqual(Object.keys(p).sort(), ['categories', 'description', 'holiday_price', 'id', 'name', 'photo_url', 'price']);
   }
 });
+
+test('bản dùng thử: nhóm sản phẩm như thư mục', async () => {
+  const db = createDemoBackend(memoryStorage());
+  const gid = await db.saveGroup({ name: ' Hoa hồng Plume ', photo_url: 'data:image/jpeg;base64,x' });
+  await assert.rejects(db.saveGroup({ name: 'hoa hồng plume' }), /Đã có nhóm tên này/);
+  await assert.rejects(db.saveGroup({ name: '  ' }), /Chưa nhập tên nhóm/);
+  const loose = (await db.listProducts()).filter((p) => p.group_id == null);
+  await db.moveProducts(loose.map((p) => p.id), gid);
+  const inGroup = async () => (await db.listProducts()).filter((p) => p.group_id === gid).length;
+  assert.equal(await inGroup(), loose.length);
+  assert.equal((await db.listGroups()).find((g) => g.id === gid).name, 'Hoa hồng Plume');
+  await db.deleteGroup(gid);
+  assert.equal(await inGroup(), 0);
+  assert.equal((await db.listProducts()).length, 4, 'xóa nhóm không xóa sản phẩm');
+
+  // Dữ liệu dùng thử lưu từ trước khi có nhóm vẫn mở được.
+  const storage = memoryStorage();
+  createDemoBackend(storage);
+  const old = JSON.parse(storage.getItem('shophoa-demo-v1'));
+  delete old.product_groups;
+  storage.setItem('shophoa-demo-v1', JSON.stringify(old));
+  assert.deepEqual(await createDemoBackend(storage).listGroups(), []);
+});

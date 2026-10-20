@@ -62,7 +62,8 @@ try {
   await step('Cài đặt: chủ shop sửa được, nhân viên không', async () => {
     const s = await owner.getSettings();
     assert.ok(Array.isArray(s.holidays));
-    await owner.saveSettings({ shop_name: 'Tiệm Hoa Thử', phone: '0901234567', address: 'Q.1, TP.HCM', slogan: 'Hoa tươi mỗi ngày', default_ship_fee: 30000, holidays: ['10-20'] });
+    await owner.saveSettings({ shop_name: 'Tiệm Hoa Thử', phone: '0901234567', address: 'Q.1, TP.HCM', slogan: 'Hoa tươi mỗi ngày', default_ship_fee: 30000,
+      holidays: [addDays(today, 180).slice(5)] });  // ngày lễ xa hôm nay để giá đơn trong bài thử luôn là giá thường
     assert.equal((await owner.getSettings()).shop_name, 'Tiệm Hoa Thử');
     await assert.rejects(staff.saveSettings({ shop_name: 'Bị đổi' }), /Chỉ chủ shop/);
   });
@@ -87,6 +88,24 @@ try {
     });
     product = (await owner.listProducts()).find((p) => p.id === id);
     assert.deepEqual(product.components.map((c) => c.qty).sort(), [2, 20]);
+  });
+
+  await step('Nhóm sản phẩm: tạo, trùng tên, chuyển sản phẩm vào, xóa nhóm vẫn giữ sản phẩm', async () => {
+    const gid = await owner.saveGroup({ name: 'Hoa hồng', photo_url: null });
+    await assert.rejects(staff.saveGroup({ name: 'HOA hồng' }), /Đã có nhóm tên này/);
+    await staff.moveProducts([product.id], gid);
+    const groupOf = async () => (await owner.listProducts()).find((p) => p.id === product.id).group_id;
+    assert.equal(await groupOf(), gid);
+    await owner.saveGroup({ id: gid, name: 'Hoa hồng Đà Lạt', photo_url: 'https://example.com/hong.jpg' });
+    assert.deepEqual((await staff.listGroups()).map((g) => [g.name, g.photo_url]), [['Hoa hồng Đà Lạt', 'https://example.com/hong.jpg']]);
+    const temp = await owner.saveGroup({ name: 'Xóa thử' });
+    await owner.saveProduct({ ...product, group_id: temp });
+    assert.equal(await groupOf(), temp);
+    await owner.deleteGroup(temp);
+    assert.equal(await groupOf(), null);
+    await owner.moveProducts([product.id], gid);
+    assert.deepEqual(await stranger.listGroups(), []);
+    await assert.rejects(anon.listGroups(), /permission denied/);
   });
 
   await step('Đơn hàng: tạo, đọc kèm khách và sản phẩm, lọc', async () => {
@@ -171,6 +190,7 @@ try {
     assert.equal(r.wasteValue, 2 * 16000);
     const backup = await owner.exportAll();
     assert.equal(backup.staff.length, 2);
+    assert.equal(backup.product_groups.length, 1);
     assert.ok(backup.orders.length >= 2);
   });
   console.log('Supabase (PostgREST): tất cả kiểm thử đều đạt');

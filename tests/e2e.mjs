@@ -168,14 +168,44 @@ try {
     await page.locator('.chip', { hasText: 'Nhập' }).first().waitFor();
   });
 
-  await step('Sản phẩm: sửa công thức', async () => {
+  await step('Sản phẩm: nhóm như thư mục, ảnh nhóm, chuyển sản phẩm vào, sửa công thức', async () => {
     await page.goto(`${admin}#/san-pham`);
-    await page.locator('a.item').first().click();
-    await page.locator('#comps select').first().waitFor();
+    await page.locator('a.folder', { hasText: 'Hoa hồng' }).waitFor();
+    assert.equal(await page.locator('a.folder').count(), 2);
     await shot('06-san-pham');
+    // Tạo nhóm mới kèm ảnh đại diện.
+    await page.locator('#add-group').click();
+    await page.locator('#gfile').setInputFiles(new URL('./fixtures/cover-test.jpg', import.meta.url).pathname);
+    await page.locator('#gcover img').waitFor();
+    await page.locator('dialog input[name=name]').fill('Hoa hồng Plume');
+    await page.getByRole('button', { name: 'Tạo nhóm' }).click();
+    await page.getByRole('heading', { name: 'Hoa hồng Plume' }).waitFor();
+    assert.ok(await page.locator('.group-cover img').isVisible(), 'ảnh đại diện nhóm');
+    // Chuyển các mẫu chưa xếp nhóm vào.
+    await page.locator('#move-in').click();
+    await page.locator('dialog .check-item', { hasText: 'Bó cúc tana mini' }).click();
+    await page.locator('dialog .check-item', { hasText: 'Bó cẩm chướng hồng' }).click();
+    await page.getByRole('button', { name: 'Chuyển vào nhóm' }).click();
+    await toastSays('Đã chuyển 2 sản phẩm');
+    await page.locator('.list a.item', { hasText: 'Bó cúc tana mini' }).waitFor();
+    await shot('06b-nhom');
+    // Thêm sản phẩm ngay trong nhóm: nhóm được chọn sẵn.
+    await page.getByRole('link', { name: '+ Sản phẩm mới' }).click();
+    await page.locator('select[name=group]').waitFor();
+    assert.equal(await page.locator('select[name=group] option:checked').textContent(), 'Hoa hồng Plume');
+    await page.locator('a.back', { hasText: 'Hoa hồng Plume' }).click();
+    // Sửa công thức một mẫu trong nhóm, lưu xong quay về nhóm.
+    await page.locator('a.item', { hasText: 'Bó cẩm chướng hồng' }).click();
+    await page.locator('#comps select').first().waitFor();
     await page.locator('#add-comp').click();
     await page.locator('#save').click();
     await toastSays('Đã lưu sản phẩm');
+    await page.getByRole('heading', { name: 'Hoa hồng Plume' }).waitFor();
+    // Tìm theo tên nhóm, không cần dấu.
+    await page.goto(`${admin}#/san-pham`);
+    await page.locator('a.folder', { hasText: 'Hoa hồng Plume' }).waitFor();
+    await page.locator('#q').fill('plume');
+    assert.equal(await page.locator('#results a.item:not(.hidden)').count(), 2);
   });
 
   await step('Khách hàng', async () => {
@@ -211,7 +241,8 @@ try {
 
   await step('Trang cho khách: xem mẫu, lọc, mở chi tiết', async () => {
     await page.goto(`${admin}#/san-pham`);
-    await page.locator('a.item', { hasText: 'Bó hồng đỏ' }).click();
+    await page.locator('#q').fill('hong do');  // mẫu nằm trong nhóm "Hoa hồng": tìm là ra
+    await page.locator('#results a.item', { hasText: 'Bó hồng đỏ' }).click();
     await page.locator('textarea[name=description]').fill('Bó hoa thử nghiệm cho trang khách');
     await page.locator('#save').click();
     await toastSays('Đã lưu sản phẩm');

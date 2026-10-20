@@ -20,7 +20,9 @@ Giao diện tự đổi theo màn hình:
   - Nhập hoa (tự ghi vào chi phí), hủy hoa héo, kiểm kho, xem lịch sử.
   - **Kho tự trừ khi bắt đầu cắm**, theo công thức từng bó. Hủy đơn thì hoàn kho.
   - Hiện lượng hoa mà đơn đặt trước sẽ cần.
-- **Sản phẩm:** công thức bó hoa, giá vốn, lãi, giá ngày lễ (tự áp dụng vào 14/2, 8/3, 20/10…).
+- **Sản phẩm:**
+  - Xếp theo **nhóm** như thư mục, ví dụ nhóm "Hoa hồng Plume" chứa các mẫu hồng Plume. Mỗi nhóm có ảnh đại diện. Trong nhóm, bấm "Chuyển mẫu vào" để gom các mẫu có sẵn.
+  - Công thức bó hoa, giá vốn, lãi, giá ngày lễ (tự áp dụng vào 14/2, 8/3, 20/10…).
 - **Khách hàng:** lịch sử đơn, tổng đã mua, công nợ, sinh nhật, ghi chú sở thích.
 - **Thu chi, báo cáo tháng:** doanh thu theo ngày, sản phẩm bán chạy, chi phí theo loại, lãi, hoa hư hỏng, xuất Excel (CSV).
 - **Sao lưu:** tải toàn bộ dữ liệu về máy (JSON).
@@ -107,6 +109,13 @@ Mở **trang quản lý** (`…/quan-ly/`) bằng **Safari** → nút **Chia s�
 - Zalo không cho điền sẵn tin nhắn qua link. Vì vậy khi khách bấm "Đặt qua Zalo", tên mẫu hoa và giá được chép sẵn để khách dán vào tin nhắn.
 - Muốn đổi dòng tiêu đề hiện khi chia sẻ link lên Facebook hay Zalo, sửa thẻ `og:title` và `og:description` trong `web/index.html`.
 - Nếu bạn đã chạy `schema.sql` bản cũ, hãy chạy lại bản mới trong SQL Editor để có trang khách. Chạy lại an toàn, không mất dữ liệu.
+
+## Cập nhật cơ sở dữ liệu
+Một số bản cập nhật cần thêm bảng hoặc cột mới (ví dụ **nhóm sản phẩm**). Khi đó:
+1. Vào Supabase, mở **SQL Editor** → **New query**.
+2. Dán toàn bộ nội dung `supabase/schema.sql` bản mới nhất rồi bấm **Run**.
+
+Chạy lại nhiều lần vẫn an toàn, không mất dữ liệu. Nếu chưa chạy, trang quản lý sẽ báo lỗi kiểu *"product_groups" does not exist*.
 
 ## Lưu ý khi dùng gói miễn phí
 - Supabase **tạm dừng** dự án miễn phí nếu khoảng 1 tuần không có ai dùng. Shop dùng hằng ngày thì không bị. Nếu bị dừng, vào trang Supabase bấm **Restore**.

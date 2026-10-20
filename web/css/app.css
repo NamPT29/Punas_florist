@@ -219,6 +219,32 @@ button.item { width: 100%; border: 0; background: none; text-align: left; border
 
 .photo-drop { width: 100%; min-height: 110px; border: 1px dashed var(--rose); border-radius: 14px; background: var(--rose-wash); color: var(--rose-ink); font-weight: 600; font-size: 14px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; position: relative; overflow: hidden; }
 .photo-drop input { position: absolute; inset: 0; opacity: 0; }
+
+/* Nhóm sản phẩm (như thư mục) có ảnh đại diện. */
+.page-part { display: flex; flex-direction: column; gap: 12px; }
+.folders { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.folder { display: flex; flex-direction: column; min-width: 0; padding: 0; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); color: var(--ink); overflow: hidden; text-align: left; font: inherit; }
+a.folder:hover { color: var(--ink); border-color: var(--rose-line); }
+.folder-img { position: relative; aspect-ratio: 4 / 3; display: grid; place-items: center; background: var(--rose-soft); color: var(--rose-ink); }
+.folder-img img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.folder-img svg { width: 34px; height: 34px; opacity: .6; }
+.folder-body { padding: 10px 12px 12px; }
+.folder .title { font-weight: 600; font-size: 14px; line-height: 1.3; overflow-wrap: anywhere; }
+.folder-add { align-items: center; justify-content: center; gap: 6px; min-height: 120px; border: 1px dashed var(--rose); background: var(--rose-wash); color: var(--rose-ink); font-weight: 600; font-size: 14px; cursor: pointer; }
+.group-cover { position: relative; display: flex; align-items: center; justify-content: center; width: 100%; aspect-ratio: 16 / 9; max-height: 360px; border-radius: var(--radius); overflow: hidden; background: var(--rose-soft); cursor: pointer; flex-shrink: 0; }
+.group-cover.empty { border: 1px dashed var(--rose); background: var(--rose-wash); color: var(--rose-ink); }
+.group-cover-in { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 16px; text-align: center; font-size: 14px; font-weight: 600; }
+.group-cover img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.group-cover-btn { position: absolute; right: 10px; bottom: 10px; display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 0 12px; border-radius: 999px; background: rgba(255,255,255,.94); color: var(--rose-ink); font-size: 13px; box-shadow: 0 4px 12px rgba(43,35,38,.16); }
+.group-cover-btn svg { width: 16px; height: 16px; }
+.group-cover input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.check-item { cursor: pointer; }
+.check-item input { width: 22px; height: 22px; accent-color: var(--rose); flex-shrink: 0; margin: 0; }
+.check-item:has(input:checked) { background: var(--rose-wash); }
+@media (min-width: 700px) {
+  .folders { grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); }
+  .group-actions { max-width: 560px; }
+}
 .photo { border-radius: 14px; width: 100%; max-height: 360px; object-fit: cover; }
 
 /* ---------- Kho ---------- */
