@@ -183,6 +183,7 @@ try {
     assert.ok(await page.locator('.group-cover img').isVisible(), 'ảnh đại diện nhóm');
     // Chuyển các mẫu chưa xếp nhóm vào.
     await page.locator('#move-in').click();
+    assert.equal(await page.locator('dialog .check-item', { hasText: 'Bó hồng đỏ' }).count(), 0, 'mẫu đã có nhóm không hiện để chuyển');
     await page.locator('dialog .check-item', { hasText: 'Bó cúc tana mini' }).click();
     await page.locator('dialog .check-item', { hasText: 'Bó cẩm chướng hồng' }).click();
     await page.getByRole('button', { name: 'Chuyển vào nhóm' }).click();
@@ -257,6 +258,9 @@ try {
     await shot('10-trang-khach');
     // Mẫu xếp theo bộ sưu tập (nhóm trong trang quản lý), theo tên.
     assert.deepEqual(await page.locator('.coll-head h3').allTextContents(), ['Giỏ hoa', 'Hoa hồng', 'Hoa hồng Plume']);
+    const tops = await page.locator('section.coll', { hasText: 'Hoa hồng Plume' }).locator('.p-card')
+      .evaluateAll((els) => els.map((e) => Math.round(e.getBoundingClientRect().top)));
+    assert.ok(tops.length === 2 && tops[0] === tops[1], 'mẫu trong bộ sưu tập chạy thành một hàng ngang');
     await page.locator('#coll-nav a', { hasText: 'Hoa hồng Plume' }).click();
     await page.locator('#coll-nav a.on', { hasText: 'Hoa hồng Plume' }).waitFor();
     await page.locator('#occ').selectOption('Khai trương');

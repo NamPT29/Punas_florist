@@ -120,6 +120,15 @@ body.store { padding-bottom: calc(84px + var(--safe-b)); }
   .p-name { min-height: 0; margin-top: 12px; align-self: start; }
   .p-foot { margin: 4px 0 var(--rg); }
 }
+/* Mỗi bộ sưu tập một hàng ngang: điện thoại vuốt (thấy mép mẫu kế tiếp), máy tính có nút mũi tên. */
+.coll-row {
+  --rg: 4px; display: grid; grid-auto-flow: column; grid-auto-columns: 62%; column-gap: 14px;
+  overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x mandatory; scrollbar-width: none;
+  margin: 0 -20px; padding: 0 20px 4px; scroll-padding: 0 20px;
+}
+.coll-row::-webkit-scrollbar { display: none; }
+.coll-row > .p-card { scroll-snap-align: start; }
+.rail-btns { display: none; }
 .empty-note { padding: 40px 0; text-align: center; color: var(--muted); }
 .linkish { min-height: 40px; padding: 0 6px; border: 0; background: none; color: var(--rose); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
 
@@ -176,6 +185,7 @@ body.scrolled .dock { transform: none; }
 }
 @media (min-width: 640px) {
   .grid-products { --rg: 36px; grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: 20px; }
+  .coll-row { grid-auto-columns: 36%; column-gap: 20px; }
   .steps { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px; }
   .p-name { font-size: 15px; }
   .p-price { font-size: 15px; }
@@ -197,8 +207,16 @@ body.scrolled .dock { transform: none; }
   .coll-nav { gap: 34px; margin: 28px -32px 0; padding: 0 32px; background-size: calc(100% - 64px) 1px, auto; }
   .coll { padding-top: 40px; scroll-margin-top: 50px; }
   .coll + .coll { margin-top: 0; }
-  /* Tên bộ sưu tập nằm ở ô đầu của lưới 4 cột, như trang mục lục tạp chí: hàng nào cũng đầy hơn, trang ngắn lại. */
-  .coll-head { grid-column: auto; grid-row: span 3; flex-direction: column; flex-wrap: nowrap; align-items: flex-start; gap: 0; margin: 0; padding: 6px 24px 44px 0; }
+  /* Tên bộ sưu tập ở cột trái như trang mục lục tạp chí, các mẫu chạy ngang bên phải. */
+  .coll { display: grid; grid-template-columns: 220px minmax(0, 1fr); column-gap: 28px; align-items: start; padding-bottom: 40px; }
+  .coll.plain { display: block; padding-bottom: 0; }
+  .coll-head { grid-column: auto; flex-direction: column; flex-wrap: nowrap; align-items: flex-start; gap: 0; margin: 0; padding: 6px 0 0; }
+  .coll-row { grid-auto-columns: calc((100% - 3 * 24px) / 3.3); column-gap: 24px; margin: 0; padding: 0 0 4px; scroll-padding: 0; }
+  .rail-btns { order: 3; display: flex; gap: 8px; margin-top: 22px; }
+  .rail-btns[hidden] { display: none; }
+  .rail-btn { display: grid; place-items: center; width: 42px; height: 42px; border: 1px solid var(--hair); border-radius: 50%; background: var(--surface); color: var(--ink); cursor: pointer; transition: border-color .2s, color .2s; }
+  .rail-btn:hover:not(:disabled) { border-color: var(--rose); color: var(--rose); }
+  .rail-btn:disabled { opacity: .35; cursor: default; }
   .coll-head::after { content: ''; order: 1; width: 36px; height: 1px; margin: 18px 0 12px; background: var(--rose); }
   .coll-meta { order: 2; }
   .grid-products { --rg: 44px; grid-template-columns: repeat(4, minmax(0, 1fr)); column-gap: 28px; }

@@ -28,6 +28,8 @@ const productImage = (p, cls) => (p.photo_url
   ? html`<img class="${cls}" src="${p.photo_url}" alt="${p.name}" loading="lazy">`
   : html`<div class="${cls} ph tint${Number(p.id) % 4}" role="img" aria-label="${p.name}">${raw(FLOWER)}</div>`);
 
+const ARROW_L = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>';
+const ARROW_R = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>';
 const CHEVRON = '<svg class="occ-chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>';
 
 function render(root, { shop, products, groups = [] }) {
@@ -171,6 +173,16 @@ function render(root, { shop, products, groups = [] }) {
     }
   }
 
+  // Hàng ngang: hiện nút mũi tên (máy tính) khi còn mẫu bị khuất, mờ nút khi đã tới đầu/cuối.
+  function updateRail(row) {
+    const btns = row.closest('.coll').querySelector('.rail-btns');
+    const max = row.scrollWidth - row.clientWidth;
+    btns.hidden = max <= 4;
+    btns.querySelector('[data-rail="-1"]').disabled = row.scrollLeft <= 4;
+    btns.querySelector('[data-rail="1"]').disabled = row.scrollLeft >= max - 4;
+  }
+  window.addEventListener('resize', () => body.querySelectorAll('.coll-row').forEach(updateRail));
+
   function draw() {
     const q = fold(st.q);
     const match = (p) => (!st.occ || p.categories?.includes(st.occ)) && (!q || fold(`${p.name} ${p.description}`).includes(q));
@@ -179,17 +191,26 @@ function render(root, { shop, products, groups = [] }) {
     root.querySelector('#cat-sub').textContent = st.occ || q ? `${st.occ ? `${st.occ} · ` : ''}${n} mẫu phù hợp` : summary(n);
     body.innerHTML = shown.length ? shown.map((c) => html`
       <section class="coll${c.name ? '' : ' plain'}" id="${c.key}" ${raw(c.name ? `aria-labelledby="${c.key}-t"` : 'aria-label="Mẫu hoa"')}>
-        <div class="grid-products">
-          ${c.name && html`<header class="coll-head">
+        ${c.name ? html`
+          <header class="coll-head">
             <h3 id="${c.key}-t">${c.name}</h3>
             <span class="coll-meta">${c.items.length} mẫu · từ ${moneyShort(Math.min(...c.items.map(priceNow)))}</span>
-          </header>`}
-          ${c.items.map(card)}
-        </div>
+            <span class="rail-btns" hidden>
+              <button type="button" class="rail-btn" data-rail="-1" aria-label="Mẫu trước">${raw(ARROW_L)}</button>
+              <button type="button" class="rail-btn" data-rail="1" aria-label="Mẫu tiếp">${raw(ARROW_R)}</button>
+            </span>
+          </header>
+          <div class="coll-row">${c.items.map(card)}</div>`
+        : html`<div class="grid-products">${c.items.map(card)}</div>`}
       </section>`.s).join('')
       : html`<div class="empty-note">${products.length
         ? html`Không có mẫu phù hợp. <button class="linkish" data-reset>Xem tất cả mẫu</button>`
         : 'Shop đang cập nhật mẫu hoa. Nhắn Zalo để được tư vấn nhé!'}</div>`.s;
+
+    body.querySelectorAll('.coll-row').forEach((row) => {
+      updateRail(row);
+      row.addEventListener('scroll', () => updateRail(row), { passive: true });
+    });
 
     if (nav) {
       nav.innerHTML = shown.filter((c) => c.name).map((c) => html`<a href="#${c.key}" data-coll="${c.key}">${c.name}</a>`.s).join('');
@@ -212,6 +233,12 @@ function render(root, { shop, products, groups = [] }) {
   root.addEventListener('click', (e) => {
     const pc = e.target.closest('[data-pid]');
     if (pc) { openDetail(products.find((p) => String(p.id) === pc.dataset.pid)); return; }
+    const rail = e.target.closest('[data-rail]');
+    if (rail) {
+      const row = rail.closest('.coll').querySelector('.coll-row');
+      row.scrollBy({ left: Number(rail.dataset.rail) * row.clientWidth * 0.9, behavior: 'smooth' });
+      return;
+    }
     const link = e.target.closest('[data-coll]');
     if (link) {
       e.preventDefault();

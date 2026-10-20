@@ -142,8 +142,8 @@ export async function group({ el, params }) {
   const g = groups.find((x) => x.id === gid);
   if (!g) throw new Error('Không tìm thấy nhóm (có thể đã bị xóa)');
   const items = products.filter((p) => p.group_id === gid);
-  const others = products.filter((p) => p.group_id !== gid);
-  const groupName = (p) => groups.find((x) => x.id === p.group_id)?.name || '';
+  // Chỉ mẫu chưa có nhóm mới chuyển vào được; mẫu đã ở nhóm khác thì đổi ở ô "Nhóm" khi sửa mẫu.
+  const loose = products.filter((p) => !groups.some((x) => x.id === p.group_id));
 
   el.innerHTML = html`
     <header class="top-nav"><a class="back" href="#/san-pham">${raw(ICON.back)}Sản phẩm</a><h1>${g.name}</h1><button type="button" class="btn btn-sm btn-outline" id="edit" style="margin-right: 8px">Sửa nhóm</button></header>
@@ -156,7 +156,7 @@ export async function group({ el, params }) {
       </label>
       <div class="grid2 group-actions">
         <a class="btn btn-primary" href="#/san-pham/moi?g=${gid}">+ Sản phẩm mới</a>
-        <button type="button" class="btn btn-outline" id="move-in" ${others.length ? '' : 'disabled'}>Chuyển mẫu vào</button>
+        <button type="button" class="btn btn-outline" id="move-in">Chuyển mẫu vào</button>
       </div>
       <div class="sec"><h2>Sản phẩm trong nhóm</h2><span class="muted small">${items.length} mẫu</span></div>
       ${items.length
@@ -178,8 +178,11 @@ export async function group({ el, params }) {
     refresh({ keepScroll: true });
   });
   el.querySelector('#move-in').onclick = () => {
-    // Mẫu chưa có nhóm lên trước.
-    const rows = [...others].sort((a, b) => Number(a.group_id != null) - Number(b.group_id != null));
+    if (!loose.length) {
+      toast('Mẫu nào cũng đã có nhóm. Muốn đổi nhóm, mở mẫu đó và chọn lại ô "Nhóm".');
+      return;
+    }
+    const rows = loose;
     sheet({
       title: `Chuyển vào "${g.name}"`,
       submit: 'Chuyển vào nhóm',
@@ -190,7 +193,7 @@ export async function group({ el, params }) {
             <label class="item check-item" data-name="${fold(p.name)}">
               <input type="checkbox" name="pid" value="${p.id}">
               ${p.photo_url ? html`<img class="thumb" src="${p.photo_url}" alt="" loading="lazy">` : html`<div class="thumb"></div>`}
-              <div class="grow"><div class="title">${p.name}</div><div class="muted small">${groupName(p) ? `Đang ở nhóm ${groupName(p)}` : 'Chưa xếp nhóm'}</div></div>
+              <div class="grow"><div class="title">${p.name}</div><div class="muted small">${money(p.price)}</div></div>
             </label>`)}
         </div>`,
       onMount(dlg) {

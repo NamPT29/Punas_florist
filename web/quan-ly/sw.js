@@ -1,6 +1,6 @@
 // Service worker: lưu sẵn giao diện để app mở nhanh và mở được khi mạng chập chờn.
 // Dữ liệu (Supabase) luôn lấy trực tiếp từ mạng. Đổi VERSION mỗi lần cập nhật giao diện.
-const VERSION = 'shophoa-v11';
+const VERSION = 'shophoa-v12';
 // Đường dẫn tính từ thư mục /quan-ly/ (nơi đặt file này).
 const SHELL = [
   './', 'index.html', 'manifest.webmanifest', '../css/app.css', '../icons/icon.svg', '../icons/apple-touch-icon.png',
