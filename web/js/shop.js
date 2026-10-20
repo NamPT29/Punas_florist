@@ -16,11 +16,12 @@ const DECO = `<svg class="hero-deco" viewBox="0 0 1200 800" preserveAspectRatio=
   <g stroke="#F3D3DE">${rose(700, 40, 2.2)}${rose(980, 430, 1.3)}${rose(-40, 480, 1.1)}${rose(340, -90, 0.9)}</g>
 </svg>`;
 
+const stepIcon = (d) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
 const STEPS = [
-  ['Chọn mẫu', 'Xem mẫu hoa và giá ngay trên trang này.'],
-  ['Nhắn Zalo hoặc gọi', 'Báo mẫu, ngày giờ giao và lời nhắn trên thiệp.'],
-  ['Xác nhận đơn', 'Shop báo lại giá, giờ giao và cách thanh toán.'],
-  ['Nhận hoa', 'Giao tận nơi hoặc ghé shop lấy.'],
+  ['Chọn mẫu', 'Xem mẫu hoa và giá ngay trên trang này.', FLOWER],
+  ['Nhắn Zalo hoặc gọi', 'Báo mẫu, ngày giờ giao và lời nhắn trên thiệp.', stepIcon('<path d="M4 5h16v11H9l-5 4z"/><path d="M8 9h8M8 12h5"/>')],
+  ['Xác nhận đơn', 'Shop báo lại giá, giờ giao và cách thanh toán.', stepIcon('<circle cx="12" cy="12" r="9"/><path d="m8 12.5 2.7 2.7L16 10"/>')],
+  ['Nhận hoa', 'Giao tận nơi hoặc ghé shop lấy.', stepIcon('<path d="M3 7h11v9H3zM14 10h4l3 3v3h-7z"/><circle cx="7" cy="17.5" r="1.8"/><circle cx="17" cy="17.5" r="1.8"/>')],
 ];
 
 // Chưa có ảnh: nền pastel đổi màu theo mẫu cho đỡ đơn điệu.
@@ -141,6 +142,19 @@ function render(root, { shop, products, groups = [], delivered = [] }) {
         <div id="colls"></div>
       </section>
 
+      <section class="howto" id="cach-dat-hoa" aria-labelledby="howto-title">
+        <div class="kicker">Đặt hoa dễ dàng</div>
+        <h2 id="howto-title">Cách đặt hoa</h2>
+        <p class="howto-sub">Chỉ 4 bước. Shop luôn xác nhận lại với bạn trước khi cắm hoa.</p>
+        <ol class="steps">
+          ${STEPS.map(([title, text, icon], i) => html`<li class="step">
+            <span class="step-ico">${raw(icon)}<span class="step-no">${i + 1}</span></span>
+            <span class="step-body"><b>${title}</b><span class="step-text">${text}</span></span>
+          </li>`)}
+        </ol>
+        ${(zaloUrl || phone) && html`<div class="howto-cta">${zaloBtn('btn-primary btn-lg', 'Nhắn Zalo đặt hoa')}${callBtn('btn-lg', phone ? `Gọi ${phoneFmt(phone)}` : '')}</div>`}
+      </section>
+
       ${delivered.length > 0 && html`
         <section class="delivered" aria-labelledby="dlv-title">
           <div class="kicker">Khách đã nhận</div>
@@ -151,12 +165,6 @@ function render(root, { shop, products, groups = [], delivered = [] }) {
           </div>
         </section>`}
 
-      <section class="howto" aria-labelledby="howto-title">
-        <h2 id="howto-title">Cách đặt hoa</h2>
-        <ol class="steps">
-          ${STEPS.map(([title, text], i) => html`<li class="step"><span class="step-no">0${i + 1}</span><span><b>${title}</b><span class="step-text">${text}</span></span></li>`)}
-        </ol>
-      </section>
     </main>
 
     <section class="custom-band">
